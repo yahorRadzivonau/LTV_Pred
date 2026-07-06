@@ -43,6 +43,8 @@ import pandas as pd
 
 from models import common, empirical, map_model
 
+PROTECTED_FILES = ("models/map_model.py", "models/common.py", "models/empirical.py")
+
 ROOT = Path(__file__).resolve().parent
 CACHE_DIR = ROOT / "reports" / "loo_cache"
 FP_PATH = CACHE_DIR / "_fingerprint.txt"
@@ -62,7 +64,7 @@ SIGN_SUPPORT_STEPS = list(range(45, common.HMAX + 1))  # 45..52, для подс
 
 def _compute_fingerprint():
     h = hashlib.sha256()
-    for rel in ("models/map_model.py", "models/common.py"):
+    for rel in PROTECTED_FILES:
         h.update((ROOT / rel).read_bytes())
     h.update(str((ROOT / "data" / "se_training.parquet").stat().st_mtime).encode())
     return h.hexdigest()
@@ -76,7 +78,7 @@ def check_fingerprint():
         if old != fp:
             raise SystemExit(
                 "кэш устарел, почисти reports/loo_cache/ "
-                "(fingerprint models/map_model.py + models/common.py + mtime data/se_training.parquet "
+                f"(fingerprint {' + '.join(PROTECTED_FILES)} + mtime data/se_training.parquet "
                 "изменился с прошлого запуска)"
             )
         print(f"fingerprint кэша совпадает с текущим состоянием ({fp[:12]}...) — переиспользую.")
@@ -200,6 +202,10 @@ def write_old_section(lines, map_results, loo_results, empirical_overall):
         f"попавших в оценку), только не-crash аппы, mature >= {common.MIN_MATURE}. "
         "Колонка map взята из reports/comparison_detail.csv (без пересчёта), "
         "map_loo — из этого прогона.\n",
+        "**Сноска про n:** n в ячейках — общий счётчик строки (аппов, у которых есть хотя бы "
+        "одна ступень с оценкой на ЛЮБОМ из трёх горизонтов), одинаковый для нед12/26/52 в одной "
+        "строке. На нед52 конкретно реально голосует меньше аппов, чем показывает n (обычно "
+        "~17 из 35) — не переоценивайте выборку хвоста по этому n.\n",
     ]
     header = "| данных | " + " | ".join(
         f"нед{h} {name}" for h in common.HORIZONS for name in ("map", "map_loo")

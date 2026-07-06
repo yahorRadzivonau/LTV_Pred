@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile *)",
+      "Bash(python compare.py*)",
+      "Bash(python validate_loo.py*)",
+      "Bash(python debug_sign_pw2.py*)",
+      "Bash(python plot_forecasts.py*)",
+      "Bash(python segment_backtest.py*)",
+      "Bash(python -m models.*)",
+      "Bash(PYTHONIOENCODING=utf-8 python -m models.*)",
+      "Bash(PYTHONIOENCODING=utf-8 python compare.py*)",
+      "Bash(PYTHONIOENCODING=utf-8 python validate_loo.py*)",
+      "Bash(PYTHONIOENCODING=utf-8 python debug_sign_pw2.py*)",
+      "Bash(PYTHONIOENCODING=utf-8 python plot_forecasts.py*)",
+      "Bash(PYTHONIOENCODING=utf-8 python segment_backtest.py*)",
+      "Bash(python C:\\Users\\yahor\\AppData\\Local\\Temp\\claude\\*)",
+      "Bash(PYTHONIOENCODING=utf-8 python C:\\Users\\yahor\\AppData\\Local\\Temp\\claude\\*)",
+      "Bash(PYTHONPATH=C:\\Users\\yahor\\PycharmProjects\\LTV python C:\\Users\\yahor\\AppData\\Local\\Temp\\claude\\*)",
+      "Bash(./node_modules/.bin/tsc --noEmit*)",
+      "Read(C:\\Users\\yahor\\AppData\\Local\\Temp\\claude\\**)"
+    ],
+    "deny": [
+      "Bash(python pipeline/pull.py*)",
+      "Bash(*pipeline/pull.py*)",
+      "Bash(git push*)",
+      "Bash(pip install*)",
+      "Bash(del *)",
+      "Bash(rmdir *)"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.idea/
+data/*.parquet
+archive/*.parquet
+reports/loo_cache/
+reports/calendar_cache/
+out/
+v1_derty.zip
+.claude/settings.local.json
+data_repo-prod/
