@@ -2,11 +2,22 @@
 __pycache__/
 *.pyc
 .idea/
-data/*.parquet
+data/
 archive/*.parquet
 reports/loo_cache/
 reports/calendar_cache/
+reports/**/*.csv
+reports/**/*.xlsx
 out/
 v1_derty.zip
 .claude/settings.local.json
 data_repo-prod/
+
+# credentials / secrets -- defensive, in addition to data_repo-prod/ above
+.env
+.env.*
+*service-account*.json
+*serviceaccount*.json
+**/credentials.py
+**/secrets.tf
+**/secret_variables.tf

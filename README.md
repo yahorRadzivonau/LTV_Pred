@@ -1,9 +1,13 @@
 # LTV — прогноз retention/LTV подписок
 
-Прогноз retention и LTV платящих подписчиков мобильных приложений на основе
-событий AppsFlyer (`silver_layer.conversions` в BigQuery). Модели предсказывают
-не разовую цифру LTV, а всю **кривую дожития по платёжным ступеням** (1-й, 2-й,
-3-й… платёж), из которой выводится retention/LTV на любом горизонте.
+Два продукта в одном репозитории:
+
+- **iOS** (ниже) — retention/LTV мобильных подписчиков на основе событий
+  AppsFlyer (`silver_layer.conversions`). Модели предсказывают не разовую
+  цифру LTV, а всю **кривую дожития по платёжным ступеням** (1-й, 2-й, 3-й…
+  платёж), из которой выводится retention/LTV на любом горизонте.
+- **Web** (раздел «Web LTV pipeline» ниже) — LTV веб-подписок
+  Stripe/Solidgate: golden-референс + кандидат-пайплайн на appsflyer-источнике.
 
 ## Схема пайплайна
 
@@ -155,9 +159,18 @@ LTV/
 │   ├── logreg.py                # МОДЕЛЬ B (закрыта)
 │   ├── hybrid.py                # МОДЕЛЬ C (закрыта)
 │   ├── hybrid_v2.py             # МОДЕЛЬ D
-│   └── map_model.py             # МОДЕЛЬ E (базовая)
-├── reports/                     # все отчёты + reports/plots/ (PNG — в git)
-└── archive/                     # устаревшие/экспериментальные скрипты и данные (см. ниже)
+│   └── map_model.py             # МОДЕЛЬ E (базовая), общая с web-частью
+├── reports/                     # все отчёты + reports/plots/ (PNG — в git); CSV/XLSX с данными — НЕ в git
+├── archive/                     # устаревшие/экспериментальные скрипты и данные (см. ниже)
+│
+│   # --- web-часть (Stripe/Solidgate + appsflyer), см. раздел "Web LTV pipeline" ---
+├── ltv/                          # golden: config.py, revenue.py, cohorts.py
+├── ltv_v2/                        # v2/appsflyer: config.py, revenue.py -- изолирован от ltv/
+├── web_appsflyer_v2/               # build_tables.py, build_xlsx_report.py
+├── reconcile.py                    # гейт golden (бит-в-бит vs reports/reconcile_baseline.json)
+├── reconcile_v2.py                 # гейт v2 (симметричное окно vs golden + якорь)
+├── compare_map_to_local_sql_style_may_04_10.py  # форма роста, общая калибровка golden/v2
+└── tests/                          # test_ltv.py
 ```
 
 ### Что в `archive/`
@@ -184,6 +197,118 @@ LTV/
 исключали обвальные аппы из формы кривой. Поэтому `models/empirical.fit()`
 и `models/map_model.fit()` — единственные, кто принимает на вход сырую `mx`
 (не `mx_clean`) — это задокументировано в их docstring и в `compare.py`.
+
+## Web LTV pipeline (подписки Stripe/Solidgate)
+
+Второй продукт в этом репозитории: LTV веб-подписок (не мобильных, iOS-часть
+выше — отдельный продукт, отдельные данные). Два пайплайна:
+
+- **golden** (`ltv/`, `reconcile.py`) — замороженный референс на сырых
+  событиях Stripe/Solidgate, snapshot `SNAPSHOT_TS=2026-07-07`. Источник
+  истины для сверки; `reconcile.py` — гейт, проверяет бит-в-бит совпадение с
+  `reports/reconcile_baseline.json`.
+- **v2 / appsflyer** (`ltv_v2/`, `web_appsflyer_v2/`, `reconcile_v2.py`) —
+  кандидат на замену источника данных: тот же продукт, но события берутся из
+  `appsflyer-data-411716.silver_layer.web_conversions` (BigQuery) вместо сырых
+  Stripe/Solidgate. Полностью изолирован от golden — ничего в `ltv/` не читает
+  и не пишет `ltv_v2/`, и наоборот. `reconcile_v2.py` — отдельный гейт.
+
+### golden (`ltv/`)
+
+| Модуль | Что делает |
+|---|---|
+| `ltv/config.py` | Константы: `BASE_PRICE`, `TARGET_STRIPE_PRICE_ID`, `PAID_EVENTS`, `SNAPSHOT_TS`, `POP_START_DATE`, whitelist воронок. |
+| `ltv/revenue.py` | **Единственное правило дохода**: captured money = `subscription_renewed` + `trial_converted`, минус дедуп/капнутые рефанды, без `billing_issue`. |
+| `ltv/cohorts.py` | Популяция 5406 человек + `customer_user_id`↔`email` карта (email — единственный надёжный ключ склейки, см. ниже). |
+
+Подробная карта модулей и история рефакторинга — `MODULES.md`.
+
+**Известная проблема golden (не пофикшена, задокументирована)**: событие
+`trial_converted` у части подписок в апстриме содержит цену ПОЛНОГО тарифа
+($9.99/$11.99) вместо реальной цены платного триала ($0.99) — то есть golden
+теряет реальный триал-платёж так же, как раньше терял его appsflyer, только
+другим механизмом. Проверено на живых примерах (raw Stripe): из 3600 человек с
+реальным appsflyer-триалом 1810 совпадают с golden корректно, но 814 — golden
+кредитует по полной цене вместо реальной. Живёт выше по стеку (silver layer),
+чинить вне scope `ltv_v2`/`reconcile_v2.py` — см. докстринг `reconcile_v2.py`.
+
+### v2 / appsflyer (`ltv_v2/`, `web_appsflyer_v2/`)
+
+| Модуль | Что делает |
+|---|---|
+| `ltv_v2/config.py` | Источник, окно (`WINDOW_START=2026-04-13`), правило captured-дохода, refund haircut (см. ниже), правило платного триала. Каждая константа — с комментарием, откуда взялась. |
+| `ltv_v2/revenue.py` | Per-person доход из фиксированного локального пула событий (без live BigQuery на каждый прогон). |
+| `web_appsflyer_v2/build_tables.py` | Строит таблицы A (`cohort_date x utm_source`) и B (`cohort_date x first_funnel`): 3 уровня LTV на каждый горизонт (4/12/26/52/104 нед) — `base` (только $9.99/нед, надёжно), `ups_factonly` (факт, без прогноза апсела), `ups_projected` (апсел спрогнозирован месячной каденцией, ⚠ мало данных). |
+| `web_appsflyer_v2/build_xlsx_report.py` | То же самое в `.xlsx` с цветовым кодированием зон доверия (fact/model/low_n) и листом Summary (живые формулы SUMIF/SUMPRODUCT, не хардкод). |
+
+Зависимости (нужны, чтобы `build_tables.py` запустился с чистого клона):
+`compare_map_to_local_sql_style_may_04_10.py` (форма роста, переиспользуется
+из golden-калибровки) и `models/` (тот же `map_model.py`, что и в iOS-части —
+одна калибровка на оба продукта).
+
+**Ключевые решения, зафиксированные при построении v2:**
+
+- **Ключ склейки — только `LOWER(email)`.** `customer_user_id` ненадёжен:
+  Solidgate переиздаёт `customer_account_id` при ресабе/ретрае (подтверждено
+  живым примером — один email под 3 разными cus_id в двух системах).
+- **Captured-доход**: `subscription_started` + `upsale_converted` + реальный
+  платный триал (`trial_started`, сумма ≠ null и ≠ ровно $1.00). Исключены:
+  `billing_issue`, `sub_cancelled`, `upsale_created`, `trial_cancelled`
+  (echo уже посчитанной транзакции).
+- **Платный триал vs плейсхолдер** — различитель подтверждён через сырой
+  Stripe/Solidgate (не предположение): реальная активация — `payment_action=
+  auth_settle`, `invoice.amount>0`; плейсхолдер (ровно $1.00 у Solidgate) —
+  `auth_0_amount`, `invoice.amount=0`. 100% совпадений на полной локальной
+  выборке (7848 строк). Реальный триал считается в `ups` (не в `base`, чтобы
+  не портить недельную форму роста), помечен `is_trial`.
+- **base vs ups — два ЦЕЛЬНЫХ потока, не декомпозиция.** `base`=
+  `subscription_started` ($9.99/нед), `ups`=`upsale_converted` ($11.99/мес) +
+  реальный триал — разные продукты/каденции, подтверждено на живом примере
+  (два независимых Stripe-subscription_id).
+- **Прогноз апсела — месячной каденцией, не недельной.** Старый баг (+21%):
+  апсел растягивался той же недельной hazard-кривой, что и база, хотя
+  апселится раз в ~4 недели. Фикс: та же retention-кривая, но сэмплирована
+  на месячных шагах (нед 4/8/12…).
+- **Refund haircut = 0.00913 — ВРЕМЕННЫЙ костыль.** В appsflyer нет
+  событий рефанда вообще; константа выведена из доли рефандов golden на
+  симметричном окне. Заменить на реальный сигнал, как только появится.
+
+**Гейт `reconcile_v2.py`**: симметричное окно (совпадает с золотым по верхней
+границе, т.к. appsflyer — live, а golden — заморожен) + якорь на когорте
+2026-05-04. Текущее состояние (2026-07-13, после фикса триала): CHECK1
+(разрыв net vs golden) **+3.5%** — выше цели 1.5%, объяснено проблемой golden
+`trial_converted` выше, не багом v2. CHECK2 (якорь) в норме.
+
+**Известные оговорки v2 (см. `reports/web_appsflyer_v2/README.md` для полной
+версии для нетехнического читателя):**
+
+- `ups_projected` — ~3 месяца истории апсела, низкая точность, не для решений
+  без проверки `low_n`/`ltv_{N}_ups_projection_quality`.
+- На горизонтах 26/52/104 нед — 0% факта во всех ячейках обеих таблиц (ни
+  одна когорта ещё не дожила) — целиком модельный прогноз.
+- low_n (n_payers<40) — 64-78% ячеек детальных таблиц. Для читаемой сводки
+  без микро-ячеек — лист Summary в `.xlsx`.
+- 21%/24% population-разрыв между golden и appsflyer (appsflyer иногда не
+  логирует `subscription_started` для реального плательщика) — 1.44% от
+  дохода golden, ниже порога блокировки, задокументировано как оговорка к
+  источнику.
+- `SNAPSHOT_NOW` в `build_tables.py` — текущая дата на момент прогона
+  (appsflyer live, в отличие от заморожённого golden) — обновлять при
+  каждом перестроении таблиц.
+
+### Как запустить (web)
+
+```
+python reconcile.py           # гейт golden — воспроизводит замороженный baseline бит-в-бит
+python web_appsflyer_v2/build_tables.py     # строит table_A/table_B на appsflyer-источнике
+python reconcile_v2.py                       # гейт v2 — печатает CHECK1/CHECK2
+python web_appsflyer_v2/build_xlsx_report.py # .xlsx с цветовыми зонами из уже готовых CSV
+```
+
+`reconcile.py` сверяет уже посчитанные golden-таблицы с заморженным
+baseline — сами golden-таблицы (`web_person_level_*.py`) в этот репозиторий
+пока не включены (см. `MODULES.md` за их описанием); для полного
+пересчёта golden с нуля они понадобятся отдельно.
 
 ## data_repo-prod/
 

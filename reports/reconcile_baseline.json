@@ -1,0 +1,26 @@
+{
+  "_comment": "Frozen reference outputs of the web LTV pipeline, captured 2026-07-11 BEFORE the maintainability refactor. Any refactor MUST reproduce these bit-for-bit. See reconcile.py.",
+  "captured_at": "2026-07-11",
+  "anchor_cohort_2026_05_04": {
+    "per_sub_payer_ltv_rebill7": 55.162174,
+    "per_sub_n_common": 92,
+    "per_payer_base_plus_ups": 67.804382,
+    "per_attributed_base_plus_ups": 67.051000,
+    "n_matched_into_pop": 90,
+    "n_payers": 89,
+    "note": "per_payer is 67.80 post-refund-fix; the 64.72 quoted earlier was the pre-fix value"
+  },
+  "calibration": {
+    "alpha": -0.3933196671,
+    "beta": 0.0674853235,
+    "k_max_reliable": 11
+  },
+  "deliverable_csv_md5": {
+    "reports/web_model/05_person_level_clean/table_A_cohort_utm_v2.csv": "0fd8cfb4b0078d5bbae76971f965681a",
+    "reports/web_model/05_person_level_clean/table_B_cohort_funnel_v2.csv": "77cda7fb93c925df2801ca5532e5abeb"
+  },
+  "tolerance": {
+    "float_abs": 1e-05,
+    "note": "anchors/calibration compared with abs tolerance; CSVs compared by exact md5"
+  }
+}
