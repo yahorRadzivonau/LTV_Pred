@@ -31,10 +31,14 @@ that decision is made, not as a new appsflyer-side bug.
 
 Run: .venv/Scripts/python.exe reconcile_v2.py
 """
+import json
+
 import pandas as pd
 
 from ltv_v2 import revenue as R2
 from ltv_v2.config import GOLDEN_SNAPSHOT_TS, REFUND_HAIRCUT
+
+RECONCILE_BASELINE = json.load(open("reports/reconcile_baseline.json", encoding="utf-8"))
 
 pd.set_option("display.width", 160)
 
@@ -77,7 +81,7 @@ n_matched = len(cohort_af)
 n_payers = int(cohort_af["is_payer"].sum())
 appsflyer_anchor = cohort_af.loc[cohort_af["is_payer"], "net"].mean() if n_payers else float("nan")
 
-golden_anchor = 67.804382  # from reports/reconcile_baseline.json (per-payer, golden pipeline)
+golden_anchor = RECONCILE_BASELINE["anchor_cohort_2026_05_04"]["per_payer_base_plus_ups"]  # golden pipeline, per-payer
 anchor_diff = appsflyer_anchor - golden_anchor
 anchor_diff_pct = anchor_diff / golden_anchor * 100
 
