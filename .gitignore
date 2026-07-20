@@ -4,6 +4,7 @@ __pycache__/
 .idea/
 data/
 archive/*.parquet
+attic/archive/*.parquet
 reports/loo_cache/
 reports/calendar_cache/
 reports/**/*.csv
