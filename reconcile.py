@@ -37,8 +37,8 @@ def md5(path):
 def recompute_anchor_and_calibration():
     from compare_map_to_local_sql_style_may_04_10 import (
         load_golden, filter_provider_and_app, subscription_start_table,
-        local_paid_events, load_web_matrix, sql_style_summary, SNAPSHOT_TS,
-        TARGET_STRIPE_PRICE_ID,
+        local_paid_events, load_web_matrix, sql_style_summary, fit_web_ios_calibration,
+        SNAPSHOT_TS, TARGET_STRIPE_PRICE_ID,
     )
     from models import common, map_model
 
@@ -81,29 +81,7 @@ def recompute_anchor_and_calibration():
         return {"N": len(cpay), "max_mature_rebill": mmr, "fact": sql_style_summary(cp, cpay, mmr).set_index("rebill_number")}
 
     cohorts = [c for c in (bcd(cw2) for cw2 in sorted(starts9.cohort_week.unique())) if c]
-    max_k = max(c["max_mature_rebill"] for c in cohorts)
-    rows = []
-    for k in range(1, max_k + 1):
-        ar = dd = 0
-        for c in cohorts:
-            if c["max_mature_rebill"] < k:
-                continue
-            f = c["fact"]
-            prev = c["N"] if k == 1 else f.loc[k - 1, "active_users"]
-            cur = f.loc[k, "active_users"] if k in f.index else np.nan
-            if pd.isna(cur):
-                continue
-            ar += prev; dd += prev - cur
-        rows.append({"k": k, "N_at_risk": ar, "h_web_raw": dd / ar if ar else np.nan})
-    h = pd.DataFrame(rows).set_index("k")
-    h["h_ios"] = [state_ios["h_base"].get(k, np.nan) for k in h.index]
-    h["reliable"] = h["N_at_risk"] >= RELIABILITY_N
-    kmr = int(h.index[h["reliable"]].max())
-    rel = h[h["reliable"]].copy()
-    rel["lr"] = np.log(rel["h_web_raw"] / rel["h_ios"])
-    X = np.vstack([np.ones(len(rel)), (rel.index - 1).values]).T
-    w = rel["N_at_risk"].values
-    alpha, beta = np.linalg.lstsq(X * np.sqrt(w)[:, None], rel["lr"].values * np.sqrt(w), rcond=None)[0]
+    alpha, beta, kmr = fit_web_ios_calibration(cohorts, state_ios["h_base"], RELIABILITY_N)
     return ltv7, float(alpha), float(beta), kmr
 
 

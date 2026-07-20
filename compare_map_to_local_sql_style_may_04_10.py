@@ -342,6 +342,61 @@ def raw_map_ltv(predicted_survival: pd.Series, arpu_by_rebill: pd.Series) -> pd.
     return pd.Series(result, dtype=float)
 
 
+def fit_web_ios_calibration(
+    cohorts: list[dict],
+    h_ios: pd.Series,
+    reliability_n_threshold: int,
+) -> tuple[float, float, int]:
+    """
+    Weighted log-linear calibration of the web hazard curve against the iOS
+    map-model h_base: h_web_raw[k] ~= h_ios[k] * exp(alpha + beta*(k-1)).
+
+    cohorts: list of {"max_mature_rebill": int, "N": int, "fact": DataFrame
+             indexed by rebill_number with an "active_users" column} -- one
+             entry per web cohort week, already filtered to cohorts that
+             passed MIN_FIRST_PAYERS/MIN_MATURE_REBILL.
+    h_ios: the iOS map-model's h_base series (index = week k).
+    reliability_n_threshold: minimum N_at_risk for a week k to enter the fit.
+
+    Returns (alpha, beta, k_max_reliable). Unified 2026-07 (Phase B) from two
+    near-identical copies (build_tables.py/build_triple_report_fixed.py vs
+    reconcile.py) that differed only in reliable-subset indexing style and
+    whether k_max_reliable was cast to int -- canon here is .loc[mask]
+    indexing + explicit int(), numerically verified identical across all
+    three call sites (alpha=-0.3933196671, beta=0.0674853235,
+    k_max_reliable=11).
+    """
+    max_k = max(c["max_mature_rebill"] for c in cohorts)
+    rows = []
+    for k in range(1, max_k + 1):
+        at_risk, died = 0, 0
+        for c in cohorts:
+            if c["max_mature_rebill"] < k:
+                continue
+            fact = c["fact"]
+            prev = c["N"] if k == 1 else fact.loc[k - 1, "active_users"]
+            cur = fact.loc[k, "active_users"] if k in fact.index else np.nan
+            if pd.isna(cur):
+                continue
+            at_risk += prev
+            died += (prev - cur)
+        h = died / at_risk if at_risk else np.nan
+        rows.append({"k": k, "N_at_risk": at_risk, "h_web_raw": h})
+    h_table = pd.DataFrame(rows).set_index("k")
+    h_table["h_ios"] = [h_ios.get(k, np.nan) for k in h_table.index]
+    h_table["reliable"] = h_table["N_at_risk"] >= reliability_n_threshold
+
+    rel_mask = h_table["reliable"]
+    k_max_reliable = int(h_table.index[rel_mask].max())
+    rel = h_table.loc[rel_mask].copy()
+
+    rel["log_ratio"] = np.log(rel["h_web_raw"] / rel["h_ios"])
+    X = np.vstack([np.ones(len(rel)), (rel.index - 1).values]).T
+    w = rel["N_at_risk"].values
+    alpha, beta = np.linalg.lstsq(X * np.sqrt(w)[:, None], rel["log_ratio"].values * np.sqrt(w), rcond=None)[0]
+    return alpha, beta, k_max_reliable
+
+
 def main() -> None:
     golden = load_golden()
     filtered, filter_meta = filter_provider_and_app(golden)

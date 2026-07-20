@@ -34,7 +34,7 @@ os.chdir(ROOT)
 from compare_map_to_local_sql_style_may_04_10 import (
     load_golden, filter_provider_and_app, subscription_start_table,
     local_paid_events, load_web_matrix, sql_style_summary, visible_at_week_n,
-    raw_map_ltv, SNAPSHOT_TS, TARGET_STRIPE_PRICE_ID,
+    raw_map_ltv, fit_web_ios_calibration, SNAPSHOT_TS, TARGET_STRIPE_PRICE_ID,
 )
 from models import common, map_model
 from models.common import HMAX
@@ -99,32 +99,7 @@ def build_cohort_data(cw):
 cohort_weeks = sorted(starts_9_99["cohort_week"].unique())
 cohorts_list = [c for c in (build_cohort_data(cw) for cw in cohort_weeks) if c is not None]
 
-max_k = max(c["max_mature_rebill"] for c in cohorts_list)
-rows = []
-for k in range(1, max_k + 1):
-    at_risk, died = 0, 0
-    for c in cohorts_list:
-        if c["max_mature_rebill"] < k:
-            continue
-        fact = c["fact"]
-        prev = c["N"] if k == 1 else fact.loc[k - 1, "active_users"]
-        cur = fact.loc[k, "active_users"] if k in fact.index else np.nan
-        if pd.isna(cur):
-            continue
-        at_risk += prev
-        died += (prev - cur)
-    h = died / at_risk if at_risk else np.nan
-    rows.append({"k": k, "N_at_risk": at_risk, "h_web_raw": h})
-h_table = pd.DataFrame(rows).set_index("k")
-h_table["h_ios"] = [state_ios["h_base"].get(k, np.nan) for k in h_table.index]
-h_table["reliable"] = h_table["N_at_risk"] >= RELIABILITY_N_THRESHOLD
-k_max_reliable = h_table.index[h_table["reliable"]].max()
-
-rel = h_table.loc[h_table["reliable"]].copy()
-rel["log_ratio"] = np.log(rel["h_web_raw"] / rel["h_ios"])
-X = np.vstack([np.ones(len(rel)), (rel.index - 1).values]).T
-w = rel["N_at_risk"].values
-alpha, beta = np.linalg.lstsq(X * np.sqrt(w)[:, None], rel["log_ratio"].values * np.sqrt(w), rcond=None)[0]
+alpha, beta, k_max_reliable = fit_web_ios_calibration(cohorts_list, state_ios["h_base"], RELIABILITY_N_THRESHOLD)
 
 correction = pd.Series(1.0, index=range(1, HMAX + 1))
 for k in range(1, k_max_reliable + 1):
