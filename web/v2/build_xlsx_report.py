@@ -6,7 +6,7 @@ Isolated: reads ONLY the already-built table_A/table_B CSVs under
 reports/web_appsflyer_v2/. Does not touch ltv/, the golden pipeline, or its
 reconcile.py gate.
 
-Run: .venv/Scripts/python.exe web_appsflyer_v2/build_xlsx_report.py
+Run: .venv/Scripts/python.exe web/v2/build_xlsx_report.py
 """
 import os
 import sys

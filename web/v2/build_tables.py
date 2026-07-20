@@ -15,7 +15,7 @@ alpha/beta refit live, K_SHRINK untouched) -- structure is new, math is not.
 
 Four variants per horizon: {base, base+ups} x {per_attributed, per_payer}.
 
-Run: .venv/Scripts/python.exe web_appsflyer_v2/build_tables.py
+Run: .venv/Scripts/python.exe web/v2/build_tables.py
 """
 import os
 import sys
