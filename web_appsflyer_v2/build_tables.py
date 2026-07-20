@@ -38,12 +38,11 @@ from ltv.config import (
     LOW_N_CELL_THRESHOLD, H_EXT, HORIZONS_REPORT,
 )
 from ltv_v2 import revenue as R2
-from ltv_v2.config import WINDOW_START, MONTH_STEP, SNAPSHOT_DATE
+from ltv_v2.config import WINDOW_START, MONTH_STEP, SNAPSHOT_DATE, OUT_DIR
 
 pd.set_option("display.width", 220)
 pd.set_option("display.max_columns", 30)
 
-OUT_DIR = "reports/web_appsflyer_v2"
 HORIZONS = HORIZONS_REPORT
 
 # ================================================================ 1. relative growth SHAPE (identical reconstruction, unchanged math)

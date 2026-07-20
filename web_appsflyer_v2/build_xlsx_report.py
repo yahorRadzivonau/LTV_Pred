@@ -14,11 +14,13 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
+from ltv.config import HORIZONS_REPORT
+
 OUT_DIR = "reports/web_appsflyer_v2"
 TABLE_A_PATH = f"{OUT_DIR}/table_A_cohort_utm_appsflyer.csv"
 TABLE_B_PATH = f"{OUT_DIR}/table_B_cohort_funnel_appsflyer.csv"
 XLSX_PATH = f"{OUT_DIR}/LTV_v2_tables.xlsx"
-HORIZONS = [4, 12, 26, 52, 104]
+HORIZONS = HORIZONS_REPORT
 
 FONT_NAME = "Arial"
 

@@ -32,9 +32,9 @@ import numpy as np
 import pandas as pd
 
 from models import common, map_model
+from models.common import HMAX
 
 
-HMAX = 52
 COHORT_START = pd.Timestamp("2026-05-04T00:00:00Z")
 COHORT_END_EXCLUSIVE = pd.Timestamp("2026-05-11T00:00:00Z")
 COHORT_WEEK = pd.Timestamp("2026-05-04")

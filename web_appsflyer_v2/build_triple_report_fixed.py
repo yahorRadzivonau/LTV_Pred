@@ -42,17 +42,15 @@ from ltv.config import (
     RELIABILITY_N_THRESHOLD, MIN_FIRST_PAYERS, MIN_MATURE_REBILL, TAPER_WIDTH,
     LOW_N_CELL_THRESHOLD, H_EXT, HORIZONS_REPORT,
 )
-from ltv_v2.config import MONTH_STEP, SNAPSHOT_DATE as _SNAPSHOT_DATE_STR
+from ltv_v2.config import (
+    MONTH_STEP, SNAPSHOT_DATE as _SNAPSHOT_DATE_STR, OUT_DIR, MIN_COHORT_AGE_WEEKS,
+)
 
 pd.set_option("display.width", 220)
 pd.set_option("display.max_columns", 30)
 
 HORIZONS = HORIZONS_REPORT
-OUT_DIR = "reports/web_appsflyer_v2"
 SNAPSHOT_DATE = date.fromisoformat(_SNAPSHOT_DATE_STR)  # true DATE value; matches the pop/revenue build's SNAPSHOT_NOW (ltv_v2.config.SNAPSHOT_DATE)
-MIN_COHORT_AGE_WEEKS = 2  # 2026-07-20 rule change: drop cohorts younger than this entirely --
-# not flagged low_n, OUT of the sample. Upsell/rebills haven't had a chance to fire yet for a
-# 0-1 week old cohort, so any LTV number for them is noise, not signal.
 
 POP_PATH = "data/raw/_tmp_v2_pop_final.parquet"
 CUM_BASE_PATH = "data/raw/_tmp_v2_cum_base.parquet"

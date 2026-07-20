@@ -128,6 +128,18 @@ REFUND_HAIRCUT_TODO = "TEMPORARY: replace with a real refund/return event from a
 # previously copy-pasted in both).
 MONTH_STEP = 4
 
+# ============================================================ output directory
+# Shared by build_tables.py, build_triple_report_fixed.py, and build_xlsx_report.py
+# (Phase C consolidation, previously copy-pasted as a literal in both build scripts).
+OUT_DIR = "reports/web_appsflyer_v2"
+
+# ============================================================ maturity filter (2026-07-20 rule change)
+# Cohorts younger than this are dropped ENTIRELY from the triple-report sample
+# (not flagged low_n, OUT of the sample) -- upsell/rebills haven't had a chance
+# to fire yet for a 0-1 week old cohort, so any LTV number for them is noise,
+# not signal. Used by build_triple_report_fixed.py.
+MIN_COHORT_AGE_WEEKS = 2
+
 # ============================================================ snapshot date (run date)
 # The date this specific pull/rebuild was frozen at -- update together with
 # RAW_EVENTS_PATH every time a fresh appsflyer pull replaces it. Single source

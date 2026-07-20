@@ -41,6 +41,9 @@ def recompute_anchor_and_calibration():
         SNAPSHOT_TS, TARGET_STRIPE_PRICE_ID,
     )
     from models import common, map_model
+    from ltv.config import (
+        MIN_FIRST_PAYERS, MIN_MATURE_REBILL, RELIABILITY_N_THRESHOLD as RELIABILITY_N,
+    )
 
     golden = load_golden()
     filtered, _ = filter_provider_and_app(golden)
@@ -65,7 +68,6 @@ def recompute_anchor_and_calibration():
 
     # calibration alpha/beta (live lstsq, same as web_person_level_tables_v2.py)
     mx = common.load_matrix(); state_ios = map_model.fit(mx, common.select_apps(mx))
-    MIN_FIRST_PAYERS, MIN_MATURE_REBILL, RELIABILITY_N = 15, 3, 40
 
     def bcd(cwk):
         css = pd.Index(starts9.loc[starts9.cohort_week.eq(cwk), "subscription_id"].unique())
