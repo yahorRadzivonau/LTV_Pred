@@ -1,0 +1,104 @@
+[Stripe] invoice.paid deduped: 15088 payments, $112,481.38 gross (pre-QA)
+[Stripe] 3392 subs with a customer.subscription.deleted event
+[Solidgate] settle_ok orders deduped: 6409 payments, $54,771.91 gross (pre-QA)
+[Solidgate] 5062 subs with a cancel/expire event
+[QA] Total QA-excluded subs: 70 (stripe=70, solidgate=0)
+[Combine] N subscribers (non-QA, known start): 11305; alive at snapshot (no death event ever): 5914
+
+[Baseline curve] overall fact max week (n>=100) = 37; decay fit on weeks 20-35 (anchor 35): a=5.2598, r=0.9245 -- matches reports/ltv_chart/ltv_numbers.md's a=5.2598, r=0.9245
+
+[Fresh-cohort curve] 2026-04+05 pooled, N=3246, fact max week (n>=100) = 12
+ week    n   cum_avg
+    0 2797  3.256325
+    1 2797  6.474816
+    2 2797 11.006814
+    3 2797 13.451444
+    4 2797 15.515334
+    5 2619 16.928511
+    6 2298 19.019887
+    7 1825 19.774219
+    8 1530 20.254275
+    9 1200 22.462892
+   10  824 25.664939
+   11  516 29.077481
+   12  185 31.309351
+[Fresh-cohort curve] decay fit on weeks 2-8 (wk9-12 excluded as a composition-shift artifact, see comment): a=7.2294, r=0.7635, week0 (signup) = $3.26
+
+[Baseline projection] alive subs used: 5914
+month
+2026-07    42386.234387
+2026-08    44166.090459
+2026-09    38454.060882
+2026-10    18536.795311
+Freq: M
+
+[Scenario C] May->June new-subs growth rate = (5720-1799)/1799 = 218.0% MoM
+[Scenario C] monthly new-subs assumption: 2026-07=18,187, 2026-08=57,826, 2026-09=57,826, 2026-10=57,826
+[Scenario C] NOTE: this is an unmoderated continuation of a single MoM data point (May->June, itself likely inflated by a product/campaign launch) -- the resulting Sep/Oct new-subs level (~10x June) is an aggressive upper bound, not a prediction. Shown as specified; flagged here and in forecast_numbers.md, not silently softened.
+
+[Acquisition:A_stopped]
+2026-07    0.0
+2026-08    0.0
+2026-09    0.0
+2026-10    0.0
+Freq: M
+
+[Acquisition:B_flat]
+2026-07     62958.978620
+2026-08    108793.752829
+2026-09    146803.452913
+2026-10    181994.374695
+Freq: M
+
+[Acquisition:C_growth]
+2026-07    2.001809e+05
+2026-08    7.822176e+05
+2026-09    1.220704e+06
+2026-10    1.596001e+06
+Freq: M
+
+[July split] fact (Jul 1-6, from pay_all): $22,495.92 -- matches reports/growth_chart/growth_numbers.md's $22,495.92 partial-July figure
+
+[Calibration] base cohort (started before 2026-05-01): 2968, alive at cutoff: 1614
+[Calibration] pre-cutoff curve fact max week (n>=100) = 28
+[Calibration] pre-cutoff decay fit on weeks 13-28: a=1.9618, r=0.9703
+
+[Calibration] predicted May+June rebill (pre-cutoff base): $28,738.30
+[Calibration] actual May+June rebill (subs started before 2026-05-01): $26,452.73
+[Calibration] error = (28,738.30 - 26,452.73) / 26,452.73 = +8.6%
+[Calibration] PASSED (|8.6%| <= 25% threshold).
+
+[Combined totals] baseline+fact, then each scenario's baseline+fact+acquisition:
+baseline+fact:
+month
+2026-07    64882.154387
+2026-08    44166.090459
+2026-09    38454.060882
+2026-10    18536.795311
+Freq: M
+A_stopped:
+month
+2026-07    64882.154387
+2026-08    44166.090459
+2026-09    38454.060882
+2026-10    18536.795311
+Freq: M
+B_flat:
+month
+2026-07    127841.133007
+2026-08    152959.843288
+2026-09    185257.513795
+2026-10    200531.170006
+Freq: M
+C_growth:
+month
+2026-07    2.650630e+05
+2026-08    8.263837e+05
+2026-09    1.259158e+06
+2026-10    1.614538e+06
+Freq: M
+
+[Sanity] baseline+fact all non-negative.
+
+[Output] wrote reports/forecast_chart/forecast_chart.png
+[Output] wrote reports/forecast_chart/forecast_numbers.md

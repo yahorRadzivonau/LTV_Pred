@@ -1,0 +1,20 @@
+[QA] Stripe QA-excluded sub_id count: 70
+[Stripe] invoice.paid deduped: 15088 payments, $112,481.38 gross (pre-QA) -- matches build_ltv_chart.py's $112,481.38
+[Solidgate] settle_ok payments deduped: 6409, $54,771.91 gross (pre-QA) -- matches build_ltv_chart.py's $54,771.91
+[QA] Solidgate QA-excluded (>45 payments): 0
+[Combine] N subscribers (non-QA, known start): 11305 (stripe=5570, solidgate=5735)
+[QA] Stripe revenue removed by QA exclusion: $2,295.85
+[QA] Solidgate revenue removed by QA exclusion: $0.00
+
+[Months] months with any activity: ['2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07']
+[Months] pre-Oct-2025 activity found (excluded from the chart's x-axis, per spec's 'cover 2025-10 through 2026-06' range; included in the reconciliation table below): {Period('2025-07', 'M'): {'solidgate': 0.0, 'stripe': 0.0, 'total': 0.0}, Period('2025-08', 'M'): {'solidgate': 0.0, 'stripe': 0.0, 'total': 0.0}, Period('2025-09', 'M'): {'solidgate': 0.0, 'stripe': 0.0, 'total': 0.0}}, new_subs={Period('2025-07', 'M'): 11, Period('2025-08', 'M'): 14, Period('2025-09', 'M'): 18}
+
+[Reconciliation] Stripe: sum(monthly)=$110,185.53 vs gross($112,481.38) - QA($2,295.85) = $110,185.53
+[Reconciliation] Solidgate: sum(monthly)=$54,771.91 vs gross($54,771.91) - QA($0.00) = $54,771.91
+[Reconciliation] PASS (tolerance $0.01)
+
+[Summary] 2026-06: total revenue = $70,225.83, MoM vs 2026-05 ($28,955.99) = +142.5%, new subs in 2026-06 = 5720
+[Summary] 2026-07 (partial, first 6 days): total revenue = $22,495.92, new subs = 818
+
+[Output] wrote reports/growth_chart/growth_chart.png
+[Output] wrote reports/growth_chart/growth_numbers.md

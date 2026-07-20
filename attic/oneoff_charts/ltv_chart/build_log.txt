@@ -1,0 +1,104 @@
+[QA] Stripe interval_unit='day' subs: 65
+[QA] Stripe utm_source='test' subs: 5
+[QA] Stripe QA-excluded sub_id count (union): 70
+[Stripe] distinct subscriptions with a start ts: 5627
+[Stripe] raw invoice.paid rows: 15088
+[Stripe] invoice.paid deduped by invoice_id: 15088 payments, $112,481.38 gross (pre-QA, pre-refund)
+[Stripe] refunds (charge.refunded only, refund.created dropped as duplicate payment_intent subset): 476 events, $5,802.31 = 5.16% of gross Stripe revenue
+[Solidgate] raw event rows scanned for order/started_at extraction: 57936
+[Solidgate] distinct order ids: 25545
+[Solidgate] order status distribution (post-dedup, latest status per order id):
+status
+auth_failed    15528
+settle_ok       6409
+auth_ok         3525
+processing        42
+refunded          40
+void_ok            1
+[Solidgate] settle_ok payments: 6409, $54,771.91 gross (pre-QA)
+[Solidgate] distinct subscriptions with a started_at: 5735 (of 8732 distinct sub ids seen in orders)
+[QA] Solidgate subs excluded via >45-payments fallback rule: 0
+[Combine] total non-QA subscriptions with known start date: 11305 (stripe=5570, solidgate=5735)
+[Join] payments joined to a known subscription start: 19160 / 19278 (118 payments dropped -- no matching start-date record for that sub_id)
+[Clean] negative offset magnitude (days before recorded start): median=-0.00, p90=-0.00 (10th pct), min=-0.00
+[Clean] 2159 payments with negative week_of_life (payment before recorded start ts, clock-skew/delivery-order noise) clipped to week 0
+[Combine] N subscribers in curve universe: 11305
+[Overall curve] weeks with n>=100: last reliable week = 37
+[Overall curve] N(week0)=7301, N(week=37)=[156]
+ week    n   cum_avg
+    0 7301  5.938077
+    1 6126 10.732091
+    2 5323 14.700763
+    3 4527 16.488407
+    4 3858 17.748598
+    5 3642 19.930258
+    6 3321 21.857106
+    7 2848 22.954810
+    8 2553 23.764211
+    9 2223 26.846212
+   10 1847 29.377472
+   11 1539 31.482749
+   12 1208 32.740406
+   13  999 34.536176
+   14  856 36.937430
+   15  808 37.736522
+   16  766 37.832559
+   17  730 37.972589
+   18  716 38.494092
+   19  699 38.660815
+   20  652 39.102101
+   21  592 39.718598
+   22  517 42.338859
+   23  454 44.416718
+   24  428 45.469136
+   25  424 45.756627
+   26  414 46.021618
+   27  370 46.738892
+   28  332 47.827620
+   29  288 49.025035
+   30  257 50.114864
+   31  257 50.114864
+   32  256 49.822500
+   33  237 50.506034
+   34  229 50.349825
+   35  206 51.337670
+   36  158 58.521013
+   37  156 59.207308
+   38   91 65.744396
+   39   19 81.547368
+   40   11 49.968182
+   41   11 49.968182
+   42   11 49.968182
+   43   11 51.785455
+   44   11 51.785455
+   45   11 51.785455
+
+[Cohorts] dropped for N<20: [('2025-07', 11), ('2025-08', 14), ('2025-09', 18)]
+[Cohorts]
+  2025-10: N=219, last_reliable_week=38
+  2025-11: N=31, last_reliable_week=32
+  2025-12: N=299, last_reliable_week=29
+  2026-01: N=206, last_reliable_week=23
+  2026-02: N=322, last_reliable_week=20
+  2026-03: N=401, last_reliable_week=16
+  2026-04: N=1447, last_reliable_week=12
+  2026-05: N=1799, last_reliable_week=8
+  2026-06: N=5720, last_reliable_week=3
+  2026-07: N=818, last_reliable_week=None
+
+[Extrapolation] fit on 4-week-smoothed increments, weeks 20-35 (re-anchored away from the wk36-37 cohort-timing spike, see comment above): decay increment(w) = 5.2598 * 0.9245^w, anchored at week 35 = $51.34
+[Extrapolation] projected cum_avg at week 52 = $54.38
+[Extrapolation] DELTA vs prior build: anchor week 37->35, anchor value $59.21->$51.34, wk52 projection $64.38->$54.38 (-10.00)
+
+[Calibration] N threshold = 100; excluded for N<100: [('2025-11', 31)]
+[Calibration] cohorts with >=26 weeks fact, N>=100, truncated-to-12 blind extrapolation vs actual wk26:
+ cohort   n  actual_wk26  pred_wk26_from_wk12   rel_err
+2025-10 219    47.136373            43.859335 -0.069522
+2025-12 299    39.321210            39.061333 -0.006609
+[Calibration] band (max abs relative error observed) = 7.0%
+[Calibration] DELTA vs prior build: band 53.3% -> 7.0% (prior build included the N=31 2025-11 cohort, which is now excluded by the N>=100 filter)
+
+[Sanity] LTV week4=$17.75 week12=$32.74 week26=$46.02 -- all within sane bounds.
+
+[Output] wrote reports/ltv_chart/ltv_chart.png
+[Output] wrote reports/ltv_chart/ltv_numbers.md
