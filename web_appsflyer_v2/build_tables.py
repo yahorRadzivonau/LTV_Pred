@@ -38,7 +38,7 @@ from ltv.config import (
     LOW_N_CELL_THRESHOLD, H_EXT, HORIZONS_REPORT,
 )
 from ltv_v2 import revenue as R2
-from ltv_v2.config import WINDOW_START, MONTH_STEP
+from ltv_v2.config import WINDOW_START, MONTH_STEP, SNAPSHOT_DATE
 
 pd.set_option("display.width", 220)
 pd.set_option("display.max_columns", 30)
@@ -203,7 +203,7 @@ utm_map = w.groupby("email").first().reset_index()[["email", "utm_source"]]
 pop = pop.merge(utm_map, on="email", how="left")
 pop["utm_source"] = pop["utm_source"].fillna("(missing)")
 pop["first_funnel"] = pop["first_funnel"].fillna("unknown").replace("", "unknown")
-SNAPSHOT_NOW = pd.Timestamp("2026-07-20", tz="UTC")  # appsflyer is live; use today, not golden's frozen boundary
+SNAPSHOT_NOW = pd.Timestamp(SNAPSHOT_DATE, tz="UTC")  # appsflyer is live; use today, not golden's frozen boundary
 pop["age_weeks_now"] = ((SNAPSHOT_NOW - pop["first_date"]).dt.days // 7).clip(lower=0)
 pop["cohort_date"] = (pop["first_date"] - pd.to_timedelta(pop["first_date"].dt.weekday, unit="D")).dt.normalize()
 

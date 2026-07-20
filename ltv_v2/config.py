@@ -128,6 +128,15 @@ REFUND_HAIRCUT_TODO = "TEMPORARY: replace with a real refund/return event from a
 # previously copy-pasted in both).
 MONTH_STEP = 4
 
+# ============================================================ snapshot date (run date)
+# The date this specific pull/rebuild was frozen at -- update together with
+# RAW_EVENTS_PATH every time a fresh appsflyer pull replaces it. Single source
+# for what used to be two independent constants that had to be bumped by hand
+# in lockstep: build_tables.py's SNAPSHOT_NOW (age-reference date for
+# population age_weeks_now) and build_triple_report_fixed.py's SNAPSHOT_DATE
+# (informational snapshot_date column written into table C).
+SNAPSHOT_DATE = "2026-07-20"
+
 # ============================================================ window
 WINDOW_START = pd.Timestamp("2026-04-13", tz="UTC")
 # Golden's frozen snapshot boundary -- comparisons against golden MUST cap at
