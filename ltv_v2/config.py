@@ -3,10 +3,12 @@ Config for the appsflyer-source pipeline (ltv_v2). Fully separate from
 ltv/config.py -- no shared constants, so a change here can never silently
 affect the golden pipeline's reconcile.py gate.
 
-Freeze date: 2026-07-13. Rule change 2026-07-13: real paid-trial charges
-(trial_started, amount != placeholder) are now included -- see "trial revenue
-rule" below. Old freeze (no trial) kept on disk as
-appsflyer_captured_events_2026-07-13.parquet for rollback/diff.
+Freeze date: 2026-07-20 (refresh of the 2026-07-13 freeze -- same window
+start, same rules, later cutoff). Rule change 2026-07-13: real paid-trial
+charges (trial_started, amount != placeholder) are now included -- see
+"trial revenue rule" below. Prior freezes kept on disk for rollback/diff:
+appsflyer_captured_events_2026-07-13.parquet (no trial, oldest) and
+appsflyer_captured_events_with_trial_2026-07-13.parquet (previous freeze).
 """
 import pandas as pd
 
@@ -17,13 +19,14 @@ BQ_TABLE = "web_conversions"
 SOURCE = f"{BQ_PROJECT}.{BQ_DATASET}.{BQ_TABLE}"
 
 # Frozen local pull of the captured-revenue event types (see revenue.py),
-# event_date>=WINDOW_START, app_name IN APP_NAMES. Verified count 18,125 =
-# 12,759 subscription_started + 1,649 upsale_converted + 3,717 trial_started
-# (real trial charges only, amount=0.99 -- see "trial revenue rule" below).
-# Base+ups rows: 6 hash buckets, each < 3000, sums independently verified
-# against COUNT(*). Trial rows added 2026-07-13: 2 hash buckets (1871+1846),
-# verified against a separate COUNT(*)=3717.
-RAW_EVENTS_PATH = "data/raw/appsflyer_captured_events_with_trial_2026-07-13.parquet"
+# event_date>=WINDOW_START, app_name IN APP_NAMES. Verified count 23,402 =
+# 15,760 subscription_started + 1,872 upsale_converted + 5,770 trial_started
+# (real trial charges only, amount=0.99 -- see "trial revenue rule" below;
+# 100% of pulled trial rows verified amt==0.99, zero placeholders/nulls).
+# Pulled 2026-07-20 in 10 date-range chunks, each <3000 rows, each chunk's
+# row count cross-checked against an independent unchunked COUNT(*) query
+# (grand total 23,402 matched exactly, per event_type breakdown too).
+RAW_EVENTS_PATH = "data/raw/appsflyer_captured_events_with_trial_2026-07-20.parquet"
 
 APP_NAMES = ("Invinci", "Unknown")
 
@@ -113,6 +116,17 @@ REFUND_HAIRCUT = 0.00913
 REFUND_HAIRCUT_DATED = "2026-07-12"
 REFUND_HAIRCUT_SOURCE = "golden refund_capped $1,000.57 / golden gross $109,589.75, symmetric window 04-13..07-07"
 REFUND_HAIRCUT_TODO = "TEMPORARY: replace with a real refund/return event from appsflyer once the colleague adds one."
+
+# ============================================================ ups monthly-cadence sampling
+# upsale_converted fires on a ~30-day cadence, not weekly like base ($9.99/week) --
+# projecting it forward with the SAME weekly-compounding ratio used for base
+# overstates growth (the "+21% weekly-stretch bug"; see
+# web_appsflyer_v2/build_tables.py section 1b for the full derivation and the
+# monthly_ratio-vs-weekly_ratio sanity print). Fix: sample the same retention
+# curve at monthly checkpoints (week 4, 8, 12, ...) instead of weekly. Shared by
+# build_tables.py and build_triple_report_fixed.py (Phase B consolidation,
+# previously copy-pasted in both).
+MONTH_STEP = 4
 
 # ============================================================ window
 WINDOW_START = pd.Timestamp("2026-04-13", tz="UTC")

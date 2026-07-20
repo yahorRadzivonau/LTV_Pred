@@ -31,22 +31,20 @@ from compare_map_to_local_sql_style_may_04_10 import (
     raw_map_ltv, SNAPSHOT_TS, TARGET_STRIPE_PRICE_ID,
 )
 from models import common, map_model
+from models.common import HMAX
 from ltv import cohorts
+from ltv.config import (
+    RELIABILITY_N_THRESHOLD, MIN_FIRST_PAYERS, MIN_MATURE_REBILL, TAPER_WIDTH,
+    LOW_N_CELL_THRESHOLD, H_EXT, HORIZONS_REPORT,
+)
 from ltv_v2 import revenue as R2
-from ltv_v2.config import WINDOW_START
+from ltv_v2.config import WINDOW_START, MONTH_STEP
 
 pd.set_option("display.width", 220)
 pd.set_option("display.max_columns", 30)
 
-HMAX = 52
-H_EXT = 104
-RELIABILITY_N_THRESHOLD = 40
-TAPER_WIDTH = 3
-MIN_FIRST_PAYERS = 15
-MIN_MATURE_REBILL = 3
-LOW_N_CELL_THRESHOLD = 40
 OUT_DIR = "reports/web_appsflyer_v2"
-HORIZONS = [4, 12, 26, 52, 104]
+HORIZONS = HORIZONS_REPORT
 
 # ================================================================ 1. relative growth SHAPE (identical reconstruction, unchanged math)
 golden = load_golden()
@@ -157,8 +155,8 @@ def shape_ratio(target_k, anchor_k):
 # occur. Fix: reuse the SAME retention curve (same subscriber population, same
 # underlying attrition process -- retention doesn't depend on what you charge),
 # but sample it only at monthly checkpoints (week 4, 8, 12, ...), matching ups's
-# real cadence, instead of every week.
-MONTH_STEP = 4
+# real cadence, instead of every week. (MONTH_STEP itself now lives in
+# ltv_v2/config.py, shared with build_triple_report_fixed.py.)
 
 implied_weekly_survival = shape.diff() / 9.99
 implied_weekly_survival.loc[0] = 1.0  # cycle 0 (first payment) always happened -- same convention as raw_map_ltv
@@ -205,7 +203,7 @@ utm_map = w.groupby("email").first().reset_index()[["email", "utm_source"]]
 pop = pop.merge(utm_map, on="email", how="left")
 pop["utm_source"] = pop["utm_source"].fillna("(missing)")
 pop["first_funnel"] = pop["first_funnel"].fillna("unknown").replace("", "unknown")
-SNAPSHOT_NOW = pd.Timestamp("2026-07-13", tz="UTC")  # appsflyer is live; use today, not golden's frozen boundary
+SNAPSHOT_NOW = pd.Timestamp("2026-07-20", tz="UTC")  # appsflyer is live; use today, not golden's frozen boundary
 pop["age_weeks_now"] = ((SNAPSHOT_NOW - pop["first_date"]).dt.days // 7).clip(lower=0)
 pop["cohort_date"] = (pop["first_date"] - pd.to_timedelta(pop["first_date"].dt.weekday, unit="D")).dt.normalize()
 
