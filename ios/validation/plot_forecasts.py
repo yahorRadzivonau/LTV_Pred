@@ -7,6 +7,7 @@ models/map_model.py и models/empirical.py НЕ меняются — здесь 
 
 Запуск: python plot_forecasts.py
 """
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -14,10 +15,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from core import common, map_model
-from models import empirical
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
 
-ROOT = Path(__file__).resolve().parent
+from core import common, map_model
+from ios.alt_models import empirical
+
 PLOTS_DIR = ROOT / "reports" / "plots"
 OUT_PATH = ROOT / "reports" / "plot_forecasts.md"
 

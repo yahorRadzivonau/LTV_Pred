@@ -16,6 +16,7 @@ CUTOFFS/inventory() переиспользованы из calendar_backtest.py (
 Выход: reports/portfolio_drift.md + reports/plots/portfolio_drift.png.
 Запуск: python diag_portfolio_drift.py
 """
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -24,10 +25,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from core import common
-from calendar_backtest import CUTOFFS, inventory
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
 
-ROOT = Path(__file__).resolve().parent
+from core import common
+from ios.validation.calendar_backtest import CUTOFFS, inventory
+
 PLOTS_DIR = ROOT / "reports" / "plots"
 OUT_PATH = ROOT / "reports" / "portfolio_drift.md"
 

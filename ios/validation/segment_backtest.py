@@ -17,15 +17,18 @@ fit()/personal_multiplier()/_prep()/_collapse_small() как есть (чтен�
 Выход: reports/segment_backtest.md.
 Запуск: python segment_backtest.py
 """
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from core import common, map_model
-from models import empirical
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
 
-ROOT = Path(__file__).resolve().parent
+from core import common, map_model
+from ios.alt_models import empirical
+
 OUT_PATH = ROOT / "reports" / "segment_backtest.md"
 
 PW = 4                      # компромисс объёма и раннести

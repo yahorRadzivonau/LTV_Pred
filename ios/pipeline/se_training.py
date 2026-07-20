@@ -3,7 +3,7 @@ import pyarrow.parquet as pq
 import pandas as pd
 import numpy as np
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 SRC = ROOT / "data" / "ios_events.parquet"
 OUT = ROOT / "data" / "se_training.parquet"
 

@@ -45,21 +45,24 @@ validate_loo.py, здесь дополнительно включает сам �
 """
 import hashlib
 import pickle
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from core import common, map_model
-from models import empirical
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
 
-ROOT = Path(__file__).resolve().parent
+from core import common, map_model
+from ios.alt_models import empirical
+
 CACHE_DIR = ROOT / "reports" / "calendar_cache"
 FP_PATH = CACHE_DIR / "_fingerprint.txt"
 OUT_PATH = ROOT / "reports" / "calendar_backtest.md"
 DETAIL_PATH = ROOT / "reports" / "comparison_detail.csv"
 
-PROTECTED_FILES = ("models/map_model.py", "models/common.py", "models/empirical.py", "calendar_backtest.py")
+PROTECTED_FILES = ("core/map_model.py", "core/common.py", "ios/alt_models/empirical.py", "ios/validation/calendar_backtest.py")
 
 CUTOFFS = ["2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01"]
 YOUNG_WINDOW_START_WEEKS = 8   # "молодой на T": первый платёж в [T-8нед, T-1нед]

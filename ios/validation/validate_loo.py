@@ -36,17 +36,20 @@ state.
 """
 import hashlib
 import pickle
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
+
 from core import common, map_model
-from models import empirical
+from ios.alt_models import empirical
 
-PROTECTED_FILES = ("models/map_model.py", "models/common.py", "models/empirical.py")
+PROTECTED_FILES = ("core/map_model.py", "core/common.py", "ios/alt_models/empirical.py")
 
-ROOT = Path(__file__).resolve().parent
 CACHE_DIR = ROOT / "reports" / "loo_cache"
 FP_PATH = CACHE_DIR / "_fingerprint.txt"
 DETAIL_PATH = ROOT / "reports" / "comparison_detail.csv"

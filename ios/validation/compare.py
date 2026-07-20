@@ -12,14 +12,17 @@ models/hybrid_v2.py, models/map_model.py) на одной и той же обу�
 """
 import csv
 import shutil
+import sys
 from pathlib import Path
 
 import numpy as np
 
-from core import common, map_model
-from models import empirical, hybrid, hybrid_v2, logreg
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
 
-ROOT = Path(__file__).resolve().parent
+from core import common, map_model
+from ios.alt_models import empirical, hybrid, hybrid_v2, logreg
+
 REPORT_PATH = ROOT / "reports" / "comparison.md"
 REPORT_PREV_PATH = ROOT / "reports" / "comparison_prev.md"
 DETAIL_PATH = ROOT / "reports" / "comparison_detail.csv"
