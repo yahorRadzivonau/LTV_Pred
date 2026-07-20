@@ -17,7 +17,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
-from models.common import HMAX, K_SHRINK, RR_CLIP, empirical_hbase
+from core.common import HMAX, K_SHRINK, RR_CLIP, empirical_hbase
 
 CAT = ["step_bin", "geo", "media_source", "attribution_source", "plan_interval", "cohort_month"]
 NUM = ["billing_day_of_month", "trial_days"]

@@ -31,13 +31,13 @@ ROOT = HERE.parent
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
-from compare_map_to_local_sql_style_may_04_10 import (
+from core.web_calibration import (
     load_golden, filter_provider_and_app, subscription_start_table,
     local_paid_events, load_web_matrix, sql_style_summary, visible_at_week_n,
     raw_map_ltv, fit_web_ios_calibration, SNAPSHOT_TS, TARGET_STRIPE_PRICE_ID,
 )
-from models import common, map_model
-from models.common import HMAX
+from core import common, map_model
+from core.common import HMAX
 from ltv.config import (
     RELIABILITY_N_THRESHOLD, MIN_FIRST_PAYERS, MIN_MATURE_REBILL, TAPER_WIDTH,
     LOW_N_CELL_THRESHOLD, H_EXT, HORIZONS_REPORT,

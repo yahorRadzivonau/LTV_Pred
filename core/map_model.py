@@ -38,7 +38,7 @@ plan_interval ИСКЛЮЧЁН из MAP_LEVERS (был в Шаге 1 изнач�
 import numpy as np
 import pandas as pd
 
-from models.common import HMAX, K_SHRINK, MIN_PAYERS, MIN_MATURE, HORIZONS, PRED_WEEKS_LIST, empirical_hbase
+from core.common import HMAX, K_SHRINK, MIN_PAYERS, MIN_MATURE, HORIZONS, PRED_WEEKS_LIST, empirical_hbase
 
 MAP_LEVERS = ["geo", "media_source", "billday_bin"]  # порядок = порядок residual-цепочки, НЕ менять. plan_interval исключён (утечка таргета, см. докстринг модуля)
 MAP_MIN_ROWS = 2000      # минимум строк категории в чистой зоне, иначе категория -> "other"

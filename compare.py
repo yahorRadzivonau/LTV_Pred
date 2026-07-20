@@ -16,7 +16,8 @@ from pathlib import Path
 
 import numpy as np
 
-from models import common, empirical, hybrid, hybrid_v2, logreg, map_model
+from core import common, map_model
+from models import empirical, hybrid, hybrid_v2, logreg
 
 ROOT = Path(__file__).resolve().parent
 REPORT_PATH = ROOT / "reports" / "comparison.md"

@@ -14,7 +14,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from models import common, empirical, map_model
+from core import common, map_model
+from models import empirical
 
 ROOT = Path(__file__).resolve().parent
 PLOTS_DIR = ROOT / "reports" / "plots"

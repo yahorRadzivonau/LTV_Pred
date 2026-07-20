@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from models import common
+from core import common
 from calendar_backtest import CUTOFFS, inventory
 
 ROOT = Path(__file__).resolve().parent

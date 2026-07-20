@@ -41,7 +41,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from models import common, empirical, map_model
+from core import common, map_model
+from models import empirical
 
 PROTECTED_FILES = ("models/map_model.py", "models/common.py", "models/empirical.py")
 

@@ -35,12 +35,12 @@ def md5(path):
 
 # ---- 1. per-sub anchor + calibration via the compare/calibration path ----
 def recompute_anchor_and_calibration():
-    from compare_map_to_local_sql_style_may_04_10 import (
+    from core.web_calibration import (
         load_golden, filter_provider_and_app, subscription_start_table,
         local_paid_events, load_web_matrix, sql_style_summary, fit_web_ios_calibration,
         SNAPSHOT_TS, TARGET_STRIPE_PRICE_ID,
     )
-    from models import common, map_model
+    from core import common, map_model
     from ltv.config import (
         MIN_FIRST_PAYERS, MIN_MATURE_REBILL, RELIABILITY_N_THRESHOLD as RELIABILITY_N,
     )

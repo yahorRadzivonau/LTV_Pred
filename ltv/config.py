@@ -2,7 +2,7 @@
 Single home for every LTV-pipeline constant.
 
 Two rules:
-  1. Model-math constants (K_SHRINK, HMAX, ...) are RE-EXPORTED from models.common,
+  1. Model-math constants (K_SHRINK, HMAX, ...) are RE-EXPORTED from core.common,
      never redefined -- that file stays the single source of truth for the frozen
      math. Changing those is out of scope for the refactor.
   2. Web-layer constants (prices, dates, thresholds, funnels) that were copy-pasted
@@ -13,8 +13,8 @@ Freeze date: 2026-07-11 (see reports/reconcile_baseline.json).
 """
 import pandas as pd
 
-# --- re-exported model-math constants (defined in models/common.py, DO NOT redefine) ---
-from models.common import K_SHRINK, HMAX  # noqa: F401  K_SHRINK=800, HMAX=52
+# --- re-exported model-math constants (defined in core/common.py, DO NOT redefine) ---
+from core.common import K_SHRINK, HMAX  # noqa: F401  K_SHRINK=800, HMAX=52
 
 # ============================================================ prices / plan
 BASE_PRICE = 9.99                 # base weekly recurring price; base/ups split boundary

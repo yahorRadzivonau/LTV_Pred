@@ -31,8 +31,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from models import common, map_model
-from models.common import HMAX
+from core import common, map_model
+from core.common import HMAX
 
 
 COHORT_START = pd.Timestamp("2026-05-04T00:00:00Z")

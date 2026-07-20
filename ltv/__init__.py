@@ -4,7 +4,7 @@ ltv: consolidated core of the web-subscription LTV pipeline.
 Modules
 -------
 config   : every tunable constant (prices, dates, thresholds, funnel whitelist),
-           with the model-math constants re-exported from models.common (single
+           with the model-math constants re-exported from core.common (single
            source of truth -- NOT redefined here).
 revenue  : the ONE revenue rule -- captured payments only (renewed + trial_converted
            minus refunds, refund deduped + capped, no billing_issue), base/ups split.

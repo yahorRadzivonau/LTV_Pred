@@ -19,7 +19,7 @@
 import numpy as np
 import pandas as pd
 
-from models.common import HMAX, K_SHRINK, empirical_hbase
+from core.common import HMAX, K_SHRINK, empirical_hbase
 
 
 def fit(mx):
