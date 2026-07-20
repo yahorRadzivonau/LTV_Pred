@@ -5,10 +5,22 @@ multiplier on hazard (fit by weighted least squares on log(h_web_raw/h_ios)),
 tapered back to pure iOS h_base beyond the reliability boundary (no seam jump).
 hr in map_model.predict() is untouched -- K_SHRINK stays 800.
 
-Run: .venv/Scripts/python.exe web_hbase_smooth_correction.py
+Run: .venv/Scripts/python.exe web/calibration/web_hbase_smooth_correction.py
 """
+import os
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+
+# Resolve all project-relative paths from the repository root, regardless of
+# the working directory configured in PyCharm or the shell.
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "web" / "golden"))
+os.chdir(ROOT)
 
 from core.web_calibration import (
     load_golden, filter_provider_and_app, subscription_start_table,

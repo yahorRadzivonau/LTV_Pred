@@ -8,11 +8,22 @@ reconcile.py gate.
 
 Run: .venv/Scripts/python.exe web_appsflyer_v2/build_xlsx_report.py
 """
+import os
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+
+# Resolve all project-relative paths from the repository root, regardless of
+# the working directory configured in PyCharm or the shell.
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+sys.path.insert(0, str(ROOT / "web" / "golden"))
+os.chdir(ROOT)
 
 from ltv.config import HORIZONS_REPORT
 

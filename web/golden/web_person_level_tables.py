@@ -6,10 +6,21 @@ same constants as web_hbase_smooth_correction.py / web_boss_charts_ab.py) purely
 RELATIVE growth shape to extrapolate each cell's own fact anchor forward. No new
 tuning, no new ratio -- just the accepted shape applied to clean per-person facts.
 
-Run: .venv/Scripts/python.exe web_person_level_tables.py
+Run: .venv/Scripts/python.exe web/golden/web_person_level_tables.py
 """
+import os
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+
+# Resolve all project-relative paths from the repository root, regardless of
+# the working directory configured in PyCharm or the shell.
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
 
 from core.web_calibration import (
     load_golden, filter_provider_and_app, subscription_start_table,

@@ -5,15 +5,24 @@ Recomputes the frozen reference outputs (anchor 05-04, calibration alpha/beta,
 deliverable CSV hashes) from the CURRENT code + data and compares them to
 reports/reconcile_baseline.json. Every refactor step must leave this PASS.
 
-Run: .venv/Scripts/python.exe reconcile.py
+Run: .venv/Scripts/python.exe web/golden/reconcile.py
 Exit code 0 = all PASS, 1 = any FAIL.
 """
 import hashlib
 import json
+import os
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+# Resolve all project-relative paths from the repository root, regardless of
+# the working directory configured in PyCharm or the shell.
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
 
 BASELINE = json.load(open("reports/reconcile_baseline.json", encoding="utf-8"))
 TOL = BASELINE["tolerance"]["float_abs"]

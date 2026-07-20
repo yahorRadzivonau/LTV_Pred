@@ -29,11 +29,19 @@ whether to revise it now that part of "golden" isn't fully self-consistent
 either; treat a CHECK 1 FAIL in the 3-4% range as EXPECTED and explained until
 that decision is made, not as a new appsflyer-side bug.
 
-Run: .venv/Scripts/python.exe reconcile_v2.py
+Run: .venv/Scripts/python.exe web/v2/reconcile_v2.py
 """
 import json
+import os
+from pathlib import Path
 
 import pandas as pd
+
+# Resolve all project-relative paths from the repository root, regardless of
+# the working directory configured in PyCharm or the shell.
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+os.chdir(ROOT)
 
 from ltv_v2 import revenue as R2
 from ltv_v2.config import GOLDEN_SNAPSHOT_TS, REFUND_HAIRCUT

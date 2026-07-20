@@ -3,13 +3,25 @@ Two boss-facing charts using the calibrated (2-parameter smooth h_base
 correction) MAP model: A = accuracy on the reference cohort, B = app-level
 forecast with an honest +-8% (LOO) uncertainty band. No further tuning here.
 
-Run: .venv/Scripts/python.exe web_boss_charts_ab.py
+Run: .venv/Scripts/python.exe web/calibration/web_boss_charts_ab.py
 """
+import os
+import sys
+from pathlib import Path
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+# Resolve all project-relative paths from the repository root, regardless of
+# the working directory configured in PyCharm or the shell.
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "web" / "golden"))
+os.chdir(ROOT)
 
 from core.web_calibration import (
     load_golden, filter_provider_and_app, subscription_start_table,

@@ -6,10 +6,21 @@ revenue (web_person_level_fix.py). Two EXPLICIT denominators per horizon:
 Growth SHAPE (relative extrapolation curve) is the identical, unmodified
 reconstruction from web_person_level_tables.py -- not refit here.
 
-Run: .venv/Scripts/python.exe web_person_level_tables_v2.py
+Run: .venv/Scripts/python.exe web/golden/web_person_level_tables_v2.py
 """
+import os
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+
+# Resolve all project-relative paths from the repository root, regardless of
+# the working directory configured in PyCharm or the shell.
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
 
 from core.web_calibration import (
     load_golden, filter_provider_and_app, subscription_start_table,
