@@ -16,8 +16,8 @@
     "k_max_reliable": 11
   },
   "deliverable_csv_md5": {
-    "reports/web_model/05_person_level_clean/table_A_cohort_utm_v2.csv": "0fd8cfb4b0078d5bbae76971f965681a",
-    "reports/web_model/05_person_level_clean/table_B_cohort_funnel_v2.csv": "77cda7fb93c925df2801ca5532e5abeb"
+    "reports/web_golden/05_person_level_clean/table_A_cohort_utm_v2.csv": "0fd8cfb4b0078d5bbae76971f965681a",
+    "reports/web_golden/05_person_level_clean/table_B_cohort_funnel_v2.csv": "77cda7fb93c925df2801ca5532e5abeb"
   },
   "tolerance": {
     "float_abs": 1e-05,

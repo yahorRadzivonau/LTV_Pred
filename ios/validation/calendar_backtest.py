@@ -35,9 +35,9 @@ weeks_obs_at() пересчитывает эту колонку ПОДПИСЧИ
 не то же самое, что weeks_obs (он же per-subscriber, для censoring внутри
 моделей) — их не следует путать, оба нужны и считаются раздельно.
 
-Шаг 3 — отчёт reports/calendar_backtest.md (write_report).
+Шаг 3 — отчёт reports/ios/calendar_backtest.md (write_report).
 
-Кэш фитов по T в reports/calendar_cache/ (fingerprint как в
+Кэш фитов по T в reports/ios/calendar_cache/ (fingerprint как в
 validate_loo.py, здесь дополнительно включает сам этот файл — логика
 пересчёта weeks_obs живёт тут, а не в models/*.py).
 
@@ -57,10 +57,10 @@ sys.path.insert(0, str(ROOT))
 from core import common, map_model
 from ios.alt_models import empirical
 
-CACHE_DIR = ROOT / "reports" / "calendar_cache"
+CACHE_DIR = ROOT / "reports" / "ios" / "calendar_cache"
 FP_PATH = CACHE_DIR / "_fingerprint.txt"
-OUT_PATH = ROOT / "reports" / "calendar_backtest.md"
-DETAIL_PATH = ROOT / "reports" / "comparison_detail.csv"
+OUT_PATH = ROOT / "reports" / "ios" / "calendar_backtest.md"
+DETAIL_PATH = ROOT / "reports" / "ios" / "comparison_detail.csv"
 
 PROTECTED_FILES = ("core/map_model.py", "core/common.py", "ios/alt_models/empirical.py", "ios/validation/calendar_backtest.py")
 
@@ -92,7 +92,7 @@ def check_fingerprint():
         old = FP_PATH.read_text(encoding="utf-8").strip()
         if old != fp:
             raise SystemExit(
-                "кэш устарел, почисти reports/calendar_cache/ "
+                "кэш устарел, почисти reports/ios/calendar_cache/ "
                 f"(fingerprint {' + '.join(PROTECTED_FILES)} + mtime data/se_training.parquet "
                 "изменился с прошлого запуска)"
             )
@@ -257,7 +257,7 @@ def aggregate_by_T(per_app_rows):
 def step_test_baseline():
     """Те же метрики (медиана |abs%|, медиана signed%, n) из обычного
     (степенного) бэктеста compare.py, срез pw=4 нед — источник
-    reports/comparison_detail.csv (уже посчитан, без пересчёта)."""
+    reports/ios/comparison_detail.csv (уже посчитан, без пересчёта)."""
     detail = pd.read_csv(DETAIL_PATH)
     out = {}
     for h in CAL_HORIZONS:
@@ -316,7 +316,7 @@ def write_report(inv_rows, per_app_rows, agg, baseline):
         lines.append("")
 
     lines.append("## Шаг 3.2 — ключевое сравнение: степенной тест vs календарный (цена дрейфа эпох)\n")
-    lines.append(f"Степенной тест = reports/comparison.md, срез pw={STEP_TEST_PW} нед данных "
+    lines.append(f"Степенной тест = reports/ios/comparison.md, срез pw={STEP_TEST_PW} нед данных "
                   "(тот же снимок отчёта, не пересчитан). Календарный = строка 'все T' выше.\n")
     lines.append("| горизонт | модель | степенной \\|ошибка\\| (n) | календарный \\|ошибка\\| (n) | дельта, п.п. | степенной зн | календарный зн |")
     lines.append("|---|---|---|---|---|---|---|")

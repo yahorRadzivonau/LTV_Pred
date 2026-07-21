@@ -9,7 +9,7 @@ Two rules:
      across web_* scripts are defined ONCE here. Values are exactly those in the
      scripts as of the freeze date below; the refactor must not change them.
 
-Freeze date: 2026-07-11 (see reports/reconcile_baseline.json).
+Freeze date: 2026-07-11 (see reports/web_golden/reconcile_baseline.json).
 """
 import pandas as pd
 

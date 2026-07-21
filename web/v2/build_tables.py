@@ -315,7 +315,7 @@ for group_col, out_name, label in [("utm_source", "table_A_cohort_utm_appsflyer.
     print(f"wrote {path}")
     print(tbl.head(6).to_string(index=False))
 
-print("\nColumn legend (see reports/web_appsflyer_v2/README.md for the full boss-facing version):")
+print("\nColumn legend (see reports/web_v2/README.md for the full boss-facing version):")
 print("  ltv_per_attributed_* / ltv_per_payer_*  -- divide by n_attributed (all acquired) vs n_payers (payers only)")
 print("  ltv_per_*_N              -- base only ($9.99/week subscription_started stream). Reliable, weekly-ratio projected.")
 print("  ltv_per_*_N_ups_factonly -- base + ups, ups added ONLY from real observed data (frozen beyond the cohort's own age).")

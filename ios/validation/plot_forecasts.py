@@ -21,15 +21,15 @@ sys.path.insert(0, str(ROOT))
 from core import common, map_model
 from ios.alt_models import empirical
 
-PLOTS_DIR = ROOT / "reports" / "plots"
-OUT_PATH = ROOT / "reports" / "plot_forecasts.md"
+PLOTS_DIR = ROOT / "reports" / "ios" / "plots"
+OUT_PATH = ROOT / "reports" / "ios" / "plot_forecasts.md"
 
 PW_LINES = [1, 2, 4]
 PW_COLORS = {1: "tab:blue", 2: "tab:orange", 4: "tab:green"}
 VLINES = [12, 26, 52]
 CENSOR_MIN_MATURE = 50
-# "выброс по множителям" (map_multipliers.md) и "самый текучий" (сильнейшая
-# недооценка факта картой, см. reports/sign_pw2_analysis.md)
+# "выброс по множителям" (reports/ios/map_multipliers.md) и "самый текучий" (сильнейшая
+# недооценка факта картой, см. reports/ios/sign_pw2_analysis.md)
 SPECIAL_APPS = ["id6760619107", "id6744300418"]
 
 

@@ -33,7 +33,7 @@ from core import common, map_model
 from ltv.config import (
     MIN_FIRST_PAYERS, MIN_MATURE_REBILL, RELIABILITY_N_THRESHOLD, TAPER_WIDTH, LOO_BAND_PCT,
 )
-OUT_DIR = "reports/web_model/03_hazard_calibration"
+OUT_DIR = "reports/web_golden/03_hazard_calibration"
 
 golden = load_golden()
 filtered, _ = filter_provider_and_app(golden)

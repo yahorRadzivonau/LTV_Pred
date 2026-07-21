@@ -46,7 +46,7 @@ os.chdir(ROOT)
 from ltv_v2 import revenue as R2
 from ltv_v2.config import GOLDEN_SNAPSHOT_TS, REFUND_HAIRCUT
 
-RECONCILE_BASELINE = json.load(open("reports/reconcile_baseline.json", encoding="utf-8"))
+RECONCILE_BASELINE = json.load(open("reports/web_golden/reconcile_baseline.json", encoding="utf-8"))
 
 pd.set_option("display.width", 160)
 

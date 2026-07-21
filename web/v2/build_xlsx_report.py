@@ -3,7 +3,7 @@ Boss-facing Excel workbook for the ltv_v2 (appsflyer-source) LTV tables --
 color-coded by confidence zone (fact / model / low_n / ups_projected).
 
 Isolated: reads ONLY the already-built table_A/table_B CSVs under
-reports/web_appsflyer_v2/. Does not touch ltv/, the golden pipeline, or its
+reports/web_v2/. Does not touch ltv/, the golden pipeline, or its
 reconcile.py gate.
 
 Run: .venv/Scripts/python.exe web/v2/build_xlsx_report.py
@@ -27,7 +27,7 @@ os.chdir(ROOT)
 
 from ltv.config import HORIZONS_REPORT
 
-OUT_DIR = "reports/web_appsflyer_v2"
+OUT_DIR = "reports/web_v2"
 TABLE_A_PATH = f"{OUT_DIR}/table_A_cohort_utm_appsflyer.csv"
 TABLE_B_PATH = f"{OUT_DIR}/table_B_cohort_funnel_appsflyer.csv"
 XLSX_PATH = f"{OUT_DIR}/LTV_v2_tables.xlsx"

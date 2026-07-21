@@ -14,7 +14,7 @@ map_model._collapse_small (т.е. "other" тоже валидный сегмен
 тест. models/map_model.py НЕ меняется — используются только его
 fit()/personal_multiplier()/_prep()/_collapse_small() как есть (чтение).
 
-Выход: reports/segment_backtest.md.
+Выход: reports/ios/segment_backtest.md.
 Запуск: python segment_backtest.py
 """
 import sys
@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 from core import common, map_model
 from ios.alt_models import empirical
 
-OUT_PATH = ROOT / "reports" / "segment_backtest.md"
+OUT_PATH = ROOT / "reports" / "ios" / "segment_backtest.md"
 
 PW = 4                      # компромисс объёма и раннести
 SEG_MIN_SUBS = 300
@@ -38,7 +38,7 @@ SANITY_TOL = 0.02            # 2 п.п. на нед12
 BET_THRESHOLD = 0.05         # |M_geo - 1| > 0.05 -> "явная ставка"
 DIRECTION_OK = 0.60
 TOP_N = 15
-FLAG_APP = "id6744300418"    # самый текучий (см. reports/app_6744300418.md)
+FLAG_APP = "id6744300418"    # самый текучий (см. reports/ios/app_6744300418.md)
 
 
 def app_hr(state, app_rows, weeks):

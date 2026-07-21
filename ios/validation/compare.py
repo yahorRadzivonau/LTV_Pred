@@ -4,8 +4,8 @@ models/hybrid_v2.py, models/map_model.py) на одной и той же обу�
 (empirical и map — на сырой mx, logreg/hybrid/hybrid_v2 — на mx_clean без
 обвальных аппов, см. комментарий в main()), считает точность по сетке (недели
 видимых данных 1-8) x (горизонты 12/26/52 недель) и пишет:
-- reports/comparison.md         — агрегированная таблица (медианы по 35 аппам)
-- reports/comparison_detail.csv — полные данные: по каждому app_id/неделе/горизонту/модели
+- reports/ios/comparison.md         — агрегированная таблица (медианы по 35 аппам)
+- reports/ios/comparison_detail.csv — полные данные: по каждому app_id/неделе/горизонту/модели
 Предыдущие версии обоих файлов перед перезаписью сохраняются как *_prev.*.
 
 Запуск: python compare.py
@@ -23,10 +23,10 @@ sys.path.insert(0, str(ROOT))
 from core import common, map_model
 from ios.alt_models import empirical, hybrid, hybrid_v2, logreg
 
-REPORT_PATH = ROOT / "reports" / "comparison.md"
-REPORT_PREV_PATH = ROOT / "reports" / "comparison_prev.md"
-DETAIL_PATH = ROOT / "reports" / "comparison_detail.csv"
-DETAIL_PREV_PATH = ROOT / "reports" / "comparison_detail_prev.csv"
+REPORT_PATH = ROOT / "reports" / "ios" / "comparison.md"
+REPORT_PREV_PATH = ROOT / "reports" / "ios" / "comparison_prev.md"
+DETAIL_PATH = ROOT / "reports" / "ios" / "comparison_detail.csv"
+DETAIL_PREV_PATH = ROOT / "reports" / "ios" / "comparison_detail_prev.csv"
 
 MODELS = {"empirical": empirical, "logreg": logreg, "hybrid": hybrid, "hybrid_v2": hybrid_v2, "map": map_model}
 

@@ -3,7 +3,7 @@ Reconciliation gate for the LTV pipeline refactor.
 
 Recomputes the frozen reference outputs (anchor 05-04, calibration alpha/beta,
 deliverable CSV hashes) from the CURRENT code + data and compares them to
-reports/reconcile_baseline.json. Every refactor step must leave this PASS.
+reports/web_golden/reconcile_baseline.json. Every refactor step must leave this PASS.
 
 Run: .venv/Scripts/python.exe web/golden/reconcile.py
 Exit code 0 = all PASS, 1 = any FAIL.
@@ -24,7 +24,7 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
-BASELINE = json.load(open("reports/reconcile_baseline.json", encoding="utf-8"))
+BASELINE = json.load(open("reports/web_golden/reconcile_baseline.json", encoding="utf-8"))
 TOL = BASELINE["tolerance"]["float_abs"]
 results = []  # (name, ok, expected, got)
 

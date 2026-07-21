@@ -37,7 +37,7 @@ from ltv.config import (
 pd.set_option("display.width", 220)
 pd.set_option("display.max_columns", 25)
 
-OUT_DIR = "reports/web_model/05_person_level_clean"
+OUT_DIR = "reports/web_golden/05_person_level_clean"
 
 # ================================================================ 1. relative growth SHAPE
 # (identical reconstruction as web_boss_charts_ab.py -- not refit, just reused)

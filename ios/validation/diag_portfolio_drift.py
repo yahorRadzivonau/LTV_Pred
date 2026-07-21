@@ -1,6 +1,6 @@
 """
 Диагностика систематического завышения на молодых аппах, найденного
-календарным бэктестом (reports/calendar_backtest.md: map/empirical
+календарным бэктестом (reports/ios/calendar_backtest.md: map/empirical
 переоценивают факт нед12 на +16.2%/+19.5% на 12 оценках). Две гипотезы
 владельца, ПЕРЕД любым фиксом:
 (а) дрейф портфеля вниз во времени — новые аппы органически хуже держат;
@@ -13,7 +13,7 @@ CUTOFFS/inventory() переиспользованы из calendar_backtest.py (
 написан и проверен в этой же сессии) — чтобы список из 12 оцениваемых
 (T, апп) пар не пришлось пересчитывать заново другим способом.
 
-Выход: reports/portfolio_drift.md + reports/plots/portfolio_drift.png.
+Выход: reports/ios/portfolio_drift.md + reports/ios/plots/portfolio_drift.png.
 Запуск: python diag_portfolio_drift.py
 """
 import sys
@@ -31,10 +31,10 @@ sys.path.insert(0, str(ROOT))
 from core import common
 from ios.validation.calendar_backtest import CUTOFFS, inventory
 
-PLOTS_DIR = ROOT / "reports" / "plots"
-OUT_PATH = ROOT / "reports" / "portfolio_drift.md"
+PLOTS_DIR = ROOT / "reports" / "ios" / "plots"
+OUT_PATH = ROOT / "reports" / "ios" / "portfolio_drift.md"
 
-CALENDAR_GAP_PP = 16.2   # наблюдённое завышение map, нед12, "все T" (reports/calendar_backtest.md)
+CALENDAR_GAP_PP = 16.2   # наблюдённое завышение map, нед12, "все T" (reports/ios/calendar_backtest.md)
 SNAPSHOT = pd.Timestamp("2026-06-29", tz="UTC")  # последняя дата в data/se_training.parquet
 
 
@@ -103,7 +103,7 @@ def write_report(df, slope, intercept, r, d_reg, calendar_apps, trend_pp, surv_p
 
     lines = [
         "# Дрейф портфеля: диагностика завышения на молодых аппах\n",
-        "Контекст: reports/calendar_backtest.md — map/empirical переоценивают факт нед12 "
+        "Контекст: reports/ios/calendar_backtest.md — map/empirical переоценивают факт нед12 "
         f"молодых аппов на **+{CALENDAR_GAP_PP:.1f}п.п.** (n=12). Две гипотезы владельца: "
         "(а) дрейф портфеля вниз во времени, (б) эффект выжившего на уровне аппов. "
         "Это ТОЛЬКО диагностика — фикс не выбирается здесь, models/*.py и data/ не менялись.\n",

@@ -11,7 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 
 SCHEMA_YAML = os.path.join(HERE, "schema_ml_web_predictions.yaml")
-DATA_PARQUET = os.path.join(ROOT, "reports", "web_appsflyer_v2", "table_C_cohort_funnel_utm_appsflyer.parquet")
+DATA_PARQUET = os.path.join(ROOT, "reports", "web_v2", "table_C_cohort_funnel_utm_appsflyer.parquet")
 logging.basicConfig(level=logging.INFO)
 BQ_CLIENT = bigquery.Client()
 

@@ -27,7 +27,7 @@ from ltv.config import BASE_PRICE, SNAPSHOT_TS  # noqa: F401 SNAPSHOT_TS kept fo
 pd.set_option("display.width", 220)
 pd.set_option("display.max_columns", 25)
 
-OUT_DIR = "reports/web_model/05_person_level_clean"
+OUT_DIR = "reports/web_golden/05_person_level_clean"
 
 # ================================================================ FIX 1: refund dedup + clip
 # All money arithmetic (base/ups split, refund dedup, cap, proportional net) now lives

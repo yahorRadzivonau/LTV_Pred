@@ -48,7 +48,7 @@ PAID_EVENTS = {"trial_converted", "subscription_renewed"}
 
 GOLDEN_PATH = Path("data/golden/golden_all.parquet")
 WEB_MATRIX_PATH = Path("data/golden/golden_all_se_training.parquet")
-REPORTS_DIR = Path("reports/web_model/02_map_vs_sql_cohort")
+REPORTS_DIR = Path("reports/web_golden/02_map_vs_sql_cohort")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 

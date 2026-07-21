@@ -1,7 +1,7 @@
 """
 LOO-валидация модели map (Задача A + Задача A2).
 
-Задача A: проверяет, что отрыв map от других моделей в reports/comparison.md
+Задача A: проверяет, что отрыв map от других моделей в reports/ios/comparison.md
 не объясняется тем, что множители рычагов учились в том числе на юзерах
 предсказываемого аппа. Для каждого из чистых (не-crash) аппов map_model.fit()
 вызывается на матрице БЕЗ строк этого аппа, а predict() — на этом состоянии
@@ -22,13 +22,13 @@ fit() при обучении. Модели models/map_model.py и models/empiri
 изменяются, только читаются.
 
 Обычная (не-LOO) колонка "map" берётся не пересчётом, а напрямую из уже
-посчитанного reports/comparison_detail.csv — тех же чисел, что в
-reports/comparison.md (файл уже прошёл регрессионную проверку).
+посчитанного reports/ios/comparison_detail.csv — тех же чисел, что в
+reports/ios/comparison.md (файл уже прошёл регрессионную проверку).
 
-State по каждому LOO-аппу кэшируется в reports/loo_cache/ (map: <app_id>.pkl,
+State по каждому LOO-аппу кэшируется в reports/ios/loo_cache/ (map: <app_id>.pkl,
 empirical: emp_<app_id>.pkl), чтобы повторный запуск не пересчитывал фиты
 заново. Кэш привязан к fingerprint (sha256 map_model.py+common.py + mtime
-se_training.parquet) в reports/loo_cache/_fingerprint.txt — при расхождении
+se_training.parquet) в reports/ios/loo_cache/_fingerprint.txt — при расхождении
 скрипт падает с понятным сообщением вместо тихого использования устаревшего
 state.
 
@@ -50,10 +50,10 @@ from ios.alt_models import empirical
 
 PROTECTED_FILES = ("core/map_model.py", "core/common.py", "ios/alt_models/empirical.py")
 
-CACHE_DIR = ROOT / "reports" / "loo_cache"
+CACHE_DIR = ROOT / "reports" / "ios" / "loo_cache"
 FP_PATH = CACHE_DIR / "_fingerprint.txt"
-DETAIL_PATH = ROOT / "reports" / "comparison_detail.csv"
-OUT_PATH = ROOT / "reports" / "loo_map.md"
+DETAIL_PATH = ROOT / "reports" / "ios" / "comparison_detail.csv"
+OUT_PATH = ROOT / "reports" / "ios" / "loo_map.md"
 
 DEGRADATION_OK = 1.0        # <= этого -> утечки нет (старый, снятый критерий Задачи A)
 DEGRADATION_MODERATE = 3.0  # <= этого -> умеренная, > -> красный флаг
@@ -81,7 +81,7 @@ def check_fingerprint():
         old = FP_PATH.read_text(encoding="utf-8").strip()
         if old != fp:
             raise SystemExit(
-                "кэш устарел, почисти reports/loo_cache/ "
+                "кэш устарел, почисти reports/ios/loo_cache/ "
                 f"(fingerprint {' + '.join(PROTECTED_FILES)} + mtime data/se_training.parquet "
                 "изменился с прошлого запуска)"
             )
@@ -97,7 +97,7 @@ def check_fingerprint():
 # ---------------------------------------------------------------------------
 
 def normal_model_column(model_name):
-    """Агрегация уже посчитанных строк reports/comparison_detail.csv для модели
+    """Агрегация уже посчитанных строк reports/ios/comparison_detail.csv для модели
     model_name, той же логикой, что compare.py.score_model(): медиана по
     строкам на (pw, horizon), n_apps — число аппов, у которых есть хотя бы
     одна строка для этой pw (любой horizon)."""
@@ -201,10 +201,10 @@ def write_old_section(lines, map_results, loo_results, empirical_overall):
         "# LOO-валидация модели map\n",
         "Проверка честности отрыва map: множители рычагов на каждом LOO-фите обучены "
         "БЕЗ строк аппа, для которого делается прогноз (h_base внутри fit() тоже "
-        "пересчитан без него). Агрегация ячеек идентична reports/comparison.md — "
+        "пересчитан без него). Агрегация ячеек идентична reports/ios/comparison.md — "
         "медиана |отн.ошибки| (зн = медиана знаковой отн.ошибки, n = число аппов, "
         f"попавших в оценку), только не-crash аппы, mature >= {common.MIN_MATURE}. "
-        "Колонка map взята из reports/comparison_detail.csv (без пересчёта), "
+        "Колонка map взята из reports/ios/comparison_detail.csv (без пересчёта), "
         "map_loo — из этого прогона.\n",
         "**Сноска про n:** n в ячейках — общий счётчик строки (аппов, у которых есть хотя бы "
         "одна ступень с оценкой на ЛЮБОМ из трёх горизонтов), одинаковый для нед12/26/52 в одной "

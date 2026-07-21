@@ -131,7 +131,7 @@ MONTH_STEP = 4
 # ============================================================ output directory
 # Shared by build_tables.py, build_triple_report_fixed.py, and build_xlsx_report.py
 # (Phase C consolidation, previously copy-pasted as a literal in both build scripts).
-OUT_DIR = "reports/web_appsflyer_v2"
+OUT_DIR = "reports/web_v2"
 
 # ============================================================ maturity filter (2026-07-20 rule change)
 # Cohorts younger than this are dropped ENTIRELY from the triple-report sample
