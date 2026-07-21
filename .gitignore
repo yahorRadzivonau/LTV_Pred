@@ -10,13 +10,10 @@ reports/ios/calendar_cache/
 reports/**/*.csv
 reports/**/*.xlsx
 out/
-_phase_b_baseline/
-_phase_c_baseline/
 v1_derty.zip
 .claude/settings.local.json
-data_repo-prod/
 
-# credentials / secrets -- defensive, in addition to data_repo-prod/ above
+# credentials / secrets
 .env
 .env.*
 *service-account*.json
