@@ -3,12 +3,14 @@ Config for the appsflyer-source pipeline (ltv_v2). Fully separate from
 ltv/config.py -- no shared constants, so a change here can never silently
 affect the golden pipeline's reconcile.py gate.
 
-Freeze date: 2026-07-20 (refresh of the 2026-07-13 freeze -- same window
-start, same rules, later cutoff). Rule change 2026-07-13: real paid-trial
-charges (trial_started, amount != placeholder) are now included -- see
-"trial revenue rule" below. Prior freezes kept on disk for rollback/diff:
-appsflyer_captured_events_2026-07-13.parquet (no trial, oldest) and
-appsflyer_captured_events_with_trial_2026-07-13.parquet (previous freeze).
+Freeze date: 2026-07-27 (refresh of the 2026-07-20 freeze -- same window
+start, same rules, later cutoff; first refresh pulled via a committed script,
+web/v2/pull_ltv_v2_raw.py, instead of an ad-hoc session query). Rule change
+2026-07-13: real paid-trial charges (trial_started, amount != placeholder) are
+now included -- see "trial revenue rule" below. Prior freezes kept on disk for
+rollback/diff: appsflyer_captured_events_2026-07-13.parquet (no trial, oldest),
+appsflyer_captured_events_with_trial_2026-07-13.parquet, and
+appsflyer_captured_events_with_trial_2026-07-20.parquet (previous freeze).
 """
 import pandas as pd
 
@@ -19,14 +21,13 @@ BQ_TABLE = "web_conversions"
 SOURCE = f"{BQ_PROJECT}.{BQ_DATASET}.{BQ_TABLE}"
 
 # Frozen local pull of the captured-revenue event types (see revenue.py),
-# event_date>=WINDOW_START, app_name IN APP_NAMES. Verified count 23,402 =
-# 15,760 subscription_started + 1,872 upsale_converted + 5,770 trial_started
-# (real trial charges only, amount=0.99 -- see "trial revenue rule" below;
-# 100% of pulled trial rows verified amt==0.99, zero placeholders/nulls).
-# Pulled 2026-07-20 in 10 date-range chunks, each <3000 rows, each chunk's
-# row count cross-checked against an independent unchunked COUNT(*) query
-# (grand total 23,402 matched exactly, per event_type breakdown too).
-RAW_EVENTS_PATH = "data/raw/appsflyer_captured_events_with_trial_2026-07-20.parquet"
+# event_date>=WINDOW_START, app_name IN APP_NAMES. Verified count 30,583 =
+# 20,173 subscription_started + 2,292 upsale_converted + 8,118 trial_started
+# (real trial charges only, amount != TRIAL_PLACEHOLDER_AMOUNT -- see "trial
+# revenue rule" below).
+# Pulled 2026-07-27 via web/v2/pull_ltv_v2_raw.py (single guarded query,
+# dry-run + confirm, replacing the prior ad-hoc chunked session pull).
+RAW_EVENTS_PATH = "data/raw/appsflyer_captured_events_with_trial_2026-07-27.parquet"
 
 APP_NAMES = ("Invinci", "Unknown")
 
@@ -133,12 +134,13 @@ MONTH_STEP = 4
 # (Phase C consolidation, previously copy-pasted as a literal in both build scripts).
 OUT_DIR = "reports/web_v2"
 
-# ============================================================ maturity filter (2026-07-20 rule change)
+# ============================================================ maturity filter (2026-07-27 rule change)
 # Cohorts younger than this are dropped ENTIRELY from the triple-report sample
 # (not flagged low_n, OUT of the sample) -- upsell/rebills haven't had a chance
-# to fire yet for a 0-1 week old cohort, so any LTV number for them is noise,
-# not signal. Used by build_triple_report_fixed.py.
-MIN_COHORT_AGE_WEEKS = 2
+# to fire yet for a young cohort, so any LTV number for it is noise, not
+# signal. Raised from 2 to 3 weeks (2026-07-27, explicit ask) for a stricter
+# maturity bar. Used by build_triple_report_fixed.py.
+MIN_COHORT_AGE_WEEKS = 3
 
 # ============================================================ snapshot date (run date)
 # The date this specific pull/rebuild was frozen at -- update together with
@@ -147,7 +149,7 @@ MIN_COHORT_AGE_WEEKS = 2
 # in lockstep: build_tables.py's SNAPSHOT_NOW (age-reference date for
 # population age_weeks_now) and build_triple_report_fixed.py's SNAPSHOT_DATE
 # (informational snapshot_date column written into table C).
-SNAPSHOT_DATE = "2026-07-20"
+SNAPSHOT_DATE = "2026-07-27"
 
 # ============================================================ window
 WINDOW_START = pd.Timestamp("2026-04-13", tz="UTC")

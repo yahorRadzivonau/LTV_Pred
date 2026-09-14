@@ -51,7 +51,7 @@ df = df[[f["name"] for f in schema_yaml]]  # порядок и только сх
 print(f"rows={len(df)}, cols={len(df.columns)}")
 print(df.head(20).to_string())
 
-# --- ПРОВЕРКА ПЕРЕД ЗАЛИВКОЙ: раскомментируй load только после того как глянул превью ---
+# --- ПРЕДОХРАНИТЕЛЬ: подтверждение вручную перед WRITE_TRUNCATE в прод-таблицу ---
 table_id = f"{PROJECT}.{DATASET}.{TABLE}"
 table_ref = BQ_CLIENT.dataset(DATASET).table(TABLE)
 try:
@@ -59,6 +59,17 @@ try:
     print("table EXISTS")
 except NotFound:
     print("table NOT found -> will be created")
+
+prompt = (
+    f"Заливаю {len(df)} строк в {table_id} с WRITE_TRUNCATE "
+    f"(полная перезапись таблицы). Продолжить? (yes/no): "
+)
+if input(prompt).strip().lower() != "yes":
+    raise SystemExit("Отменено пользователем.")
+
+try:
+    BQ_CLIENT.get_table(table_ref)
+except NotFound:
     BQ_CLIENT.create_table(bigquery.Table(table_ref, schema=schema))
 
 job_config = bigquery.LoadJobConfig(schema=schema, write_disposition="WRITE_TRUNCATE")

@@ -299,10 +299,11 @@ LTV/
 ### Как запустить (web)
 
 ```
-python reconcile.py           # гейт golden — воспроизводит замороженный baseline бит-в-бит
-python web_appsflyer_v2/build_tables.py     # строит table_A/table_B на appsflyer-источнике
-python reconcile_v2.py                       # гейт v2 — печатает CHECK1/CHECK2
-python web_appsflyer_v2/build_xlsx_report.py # .xlsx с цветовыми зонами из уже готовых CSV
+python web/golden/reconcile.py     # гейт golden — воспроизводит замороженный baseline бит-в-бит
+python web/v2/build_tables.py      # строит table_A/table_B на appsflyer-источнике
+python web/v2/build_triple_report_fixed.py  # строит table_C (cohort x funnel x utm), с фильтром зрелости
+python web/v2/reconcile_v2.py      # гейт v2 — печатает CHECK1/CHECK2
+python web/v2/build_xlsx_report.py # .xlsx с цветовыми зонами из уже готовых CSV
 ```
 
 `reconcile.py` сверяет уже посчитанные golden-таблицы с заморженным

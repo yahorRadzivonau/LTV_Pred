@@ -172,7 +172,9 @@ for _N, _age in [(52, 12), (104, 12)]:
 
 
 # ================================================================ 2. population + attribution (appsflyer-native, no golden dependency)
-pop = cohorts.build_population_5406().rename(columns={"person_key": "email"})
+pop = cohorts.build_population_5406(
+    person_dim_path="data/raw/bq_appsflyer_person_dim_2026-07-27.parquet"
+).rename(columns={"person_key": "email"})
 pop["first_date"] = pd.to_datetime(pop["first_date"]).dt.tz_localize("UTC")
 
 w = pd.read_parquet("data/raw/web_conversions.parquet")

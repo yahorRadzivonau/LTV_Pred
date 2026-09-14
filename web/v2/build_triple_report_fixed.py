@@ -14,7 +14,7 @@ script does not import or call it.
 Two variants per horizon only (per the ask): base, and base+ups_projected --
 no ups_factonly here (unlike table_A/table_B).
 
-Run: .venv/Scripts/python.exe web_appsflyer_v2/build_triple_report.py
+Run: .venv/Scripts/python.exe web/v2/build_triple_report_fixed.py
 """
 import os
 import sys
@@ -272,7 +272,7 @@ n_low = int(tbl["low_n"].sum())
 n_tiny = int(((tbl["n_payers"] >= 1) & (tbl["n_payers"] <= 2)).sum())
 print(f"\n=== Triple report (cohort_date x first_funnel x utm_source) ===")
 print(f"n_attributed total = {tbl['n_attributed'].sum()} "
-      f"(sanity: should be {n_people_after_maturity} = 5406 minus "
+      f"(sanity: should be {n_people_after_maturity} = {n_people_before_maturity} minus "
       f"{n_people_before_maturity - n_people_after_maturity} dropped by the maturity filter)")
 print(f"N cells = {n_cells} (before maturity filter: {n_cells_before_maturity})")
 print(f"low_n (n_payers<{LOW_N_CELL_THRESHOLD}) cells = {n_low} ({n_low/n_cells:.1%})")
