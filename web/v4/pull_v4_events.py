@@ -50,6 +50,29 @@ Three differences from the v2 pulls, each deliberate:
 5. PULL_CEILING_DATE, when set, caps the pull. It exists because trial_started
    broke upstream on 2026-09-02 -- see that constant's comment in config.py.
 
+6. customer_user_id comes along, aliased to subscription_key. This is the ONE
+   new column v4 needs and the reason the pull had to change at all.
+
+   ltv_v3/config.py rejects customer_user_id, correctly, as an IDENTITY key:
+   "Solidgate reissues customer_account_id on resubscribe/retry, so one person
+   shows up under 2+ ids". That makes it useless for deciding WHO someone is --
+   and it is exactly what makes it right for deciding WHICH SUBSCRIPTION a
+   payment belongs to. It is not a broken identity key, it is a key at a
+   different grain: email = person, customer_user_id = subscription.
+
+   Measured (reports/web_v4/session_rule_findings.md), on people with 2+ ids,
+   gaps between consecutive base payments:
+       partitioned by email              39.8% of gaps <= 3 days, median 4.0d
+       partitioned by (email, this key)   1.7% of gaps <= 3 days, p25=med=p75=7.0d
+   Partitioning by this column turns what looks like noise into a textbook
+   weekly subscription. 996 people (8.3% of base payers) run two subscriptions
+   at overlapping times; without this column their payments interleave into one
+   chain and the 3-day dedup in revenue.base_payment_ladder silently deletes
+   4,672 real payments ($46,190) from the survival ladder while the revenue
+   anchor still counts them.
+
+   DO NOT use it to join people. Use LOWER(email) for that, as v3 does.
+
 Three safety guards, same pattern as web/v2/pull_ltv_v2_raw.py:
   1. dry-run to learn the scanned bytes BEFORE downloading anything
   2. hard stop if that exceeds LIMIT_GB
@@ -95,6 +118,7 @@ SELECT
   event_type,
   transaction_amount_usd  AS amt,
   net_revenue             AS amt_net,
+  customer_user_id        AS subscription_key,
   payment_provider,
   app_name,
   funnel_name,
@@ -165,6 +189,24 @@ if len(money_rows):
 
 state = df[df["event_type"].isin(STATE_EVENT_TYPES)]
 print(f"\nstate-signal rows (label-only, never revenue): {len(state)}")
+
+# subscription_key is load-bearing for v4: every downstream grain (session,
+# cohort, ladder, anchor, upsell attribution) is derived from it. A NULL here
+# does not fail loudly downstream -- it silently collapses those rows into one
+# anonymous bucket -- so the hole has to be visible right here, at the pull.
+print("\nsubscription_key (customer_user_id):")
+print(f"  {df['subscription_key'].notna().mean():.2%} non-null over all {len(df)} rows")
+_sk_null = df[df["subscription_key"].isna()]
+if len(_sk_null):
+    print(f"  {len(_sk_null)} rows WITHOUT a subscription_key, by event_type: "
+          f"{_sk_null['event_type'].value_counts().to_dict()}")
+    print("  ^ these rows cannot be assigned to a subscription. Check before building.")
+_per_person = df.groupby("email")["subscription_key"].nunique()
+print(f"  distinct keys per person: 1 -> {int((_per_person == 1).sum())}, "
+      f"2 -> {int((_per_person == 2).sum())}, "
+      f"3+ -> {int((_per_person >= 3).sum())}")
+print(f"  (people with 2+ keys run 2+ subscriptions -- that is the v4 change, "
+      f"not an anomaly)")
 
 print("\nlever coverage (share non-null):")
 for c in ["funnel_name", "country", "utm_source", "campaign_name", "ad_name"]:
