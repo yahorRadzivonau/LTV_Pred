@@ -33,7 +33,7 @@ from core import common
 from ltv_v4.config import (
     DATA_DIR, MATRIX_GLOB, POPULATION_GLOB, H_EXT, UPS_EVENT_TYPE,
     RETURN_WINDOW_DAYS, MIN_COHORT_AGE_WEEKS,
-    UPS_FIRST_WEEK, UPS_CADENCE_WEEKS,
+    UPS_FIRST_WEEK, UPS_CADENCE_WEEKS, SESSION_COL,
 )
 from ltv_v4 import se_training_web as S, map_web as M, revenue as R, money as MON
 from ltv_v4 import upsell as U
@@ -90,16 +90,18 @@ def load_pipeline_state() -> dict:
     ladder = R.base_payment_ladder(events)
     ups = R.money_events(events)
     ups = ups[ups["event_type"].eq(UPS_EVENT_TYPE)]
-    first_date = pop.set_index("email")["first_date"]
+    # По СЕССИИ. build_weekly_curve.py держит свою копию этой логики -- обе
+    # должны ключеваться одинаково, иначе основная кривая и разрезы разойдутся.
+    first_date = pop.set_index(SESSION_COL)["first_date"]
 
     def weekly_counts(df):
         """(email, week) -> 1 if the person paid that week. People, not
         payments: 0.92% of person-weeks carry two base payments, and counting
         rows would put the fact above the model's people-based scale."""
-        d = df[df["email"].isin(first_date.index)].copy()
-        d["week"] = ((d["ts"] - d["email"].map(first_date)).dt.days // 7).clip(lower=0)
+        d = df[df[SESSION_COL].isin(first_date.index)].copy()
+        d["week"] = ((d["ts"] - d[SESSION_COL].map(first_date)).dt.days // 7).clip(lower=0)
         d = d[d["week"] <= H_EXT]
-        return d.groupby(["email", "week"]).size().clip(upper=1)
+        return d.groupby([SESSION_COL, "week"]).size().clip(upper=1)
 
     ups_obs = U.checkpoint_observations(events, pop, ladder)
 
@@ -131,7 +133,7 @@ def build_cells(ps: dict, group_cols: list, rename: dict = None) -> pd.DataFrame
     assert group_cols[0] == "cohort_date", "cohort_date must be the first dimension -- hr is per cohort"
     rename = rename or {}
 
-    pop_idx = ps["pop"].set_index("email")
+    pop_idx = ps["pop"].set_index(SESSION_COL)
     mx, state = ps["mx"], ps["state"]
     cum, max_week = ps["cum"], ps["max_week"]
     base_counts, ups_counts = ps["base_counts"], ps["ups_counts"]
