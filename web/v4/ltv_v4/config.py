@@ -446,7 +446,7 @@ MIN_COHORT_AGE_WEEKS = 1
 #
 # The switch exists so "person" reproduces v3 bit-for-bit. Change it only after
 # that no-op is demonstrated on numbers, never as a convenience.
-SESSION_KEY = "person"
+SESSION_KEY = "subscription"
 SESSION_COL = "session_id"
 
 # ============================================================ paths
