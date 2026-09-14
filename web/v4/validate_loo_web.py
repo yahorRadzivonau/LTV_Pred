@@ -49,7 +49,7 @@ os.chdir(ROOT)
 from core import common  # noqa: E402
 from ltv_v4.config import (  # noqa: E402
     OUT_DIR, DATA_DIR, MATRIX_GLOB, POPULATION_GLOB, RETURN_WINDOW_DAYS,
-)
+ SESSION_COL,)
 from ltv_v4 import se_training_web as S, map_web as M, money as MON, revenue as R  # noqa: E402
 from ltv_v4 import upsell as U  # noqa: E402
 
@@ -159,7 +159,12 @@ def load_inputs(verbose: bool = True) -> dict:
         print(f"population {len(pop)} | observed revenue weeks 0..{max_week}")
         print("iOS h_base loaded (used only to splice the tail past web's own evidence)")
 
-    return {"mx": mx, "train_all": train_all, "pop_idx": pop.set_index("email"),
+    # Indexed by SESSION, not email. The population now has one row per
+    # subscription, so an email is no longer unique in it -- reindexing on it
+    # raises "cannot reindex on an axis with duplicate labels". Everything this
+    # index is joined against is already at the session grain: mx["sub_id"],
+    # cum (reindexed on pop[SESSION_COL]) and ups_obs.
+    return {"mx": mx, "train_all": train_all, "pop_idx": pop.set_index(SESSION_COL),
             "cum": cum, "max_week": max_week, "ios_h": ios_h,
             "ups_obs": ups_obs, "ups_portfolio": ups_portfolio}
 
@@ -211,8 +216,10 @@ def run_folds(data: dict, levers=None, verbose: bool = True) -> pd.DataFrame:
 
             # People of this cohort who reached the base plan -- the ones the
             # survival curve is about, and the LTV denominator here.
-            cohort_emails = target["sub_id"].unique()
-            cohort_people = pop_idx.reindex(cohort_emails).dropna(subset=["first_date"])
+            # sub_id IS the session id. Named accordingly so the grain is not
+            # mistaken for a person count again.
+            cohort_sessions = target["sub_id"].unique()
+            cohort_people = pop_idx.reindex(cohort_sessions).dropna(subset=["first_date"])
 
             for off in HORIZON_OFFSETS:
                 k = weeks + off
@@ -238,7 +245,7 @@ def run_folds(data: dict, levers=None, verbose: bool = True) -> pd.DataFrame:
                     row["ltv_anchor_obs"] = anchor_obs
                     share_ups = U.cell_rate(ups_obs, cohort_people.index, ups_portfolio)
                     row["ltv_v2_formula"] = MON.cell_ltv(curve_v2, anchor_obs, weeks, k, cohort_people, share_ups=share_ups)
-                    row["ltv_v4_formula"] = MON.cell_ltv(curve_v3, anchor_obs, weeks, k, cohort_people, share_ups=share_ups)
+                    row["ltv_v3_formula"] = MON.cell_ltv(curve_v3, anchor_obs, weeks, k, cohort_people, share_ups=share_ups)
                 rows.append(row)
 
     detail = pd.DataFrame(rows)
