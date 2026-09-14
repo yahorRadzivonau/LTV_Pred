@@ -30,7 +30,7 @@ drop out of the funnel breakdown, quietly reintroducing the same bias.
 import pandas as pd
 
 from ltv_v4.config import (
-    BASE_EVENT_TYPE, TRIAL_EVENT_TYPE, WINDOW_START, JOIN_KEY,
+    BASE_EVENT_TYPE, TRIAL_EVENT_TYPE, WINDOW_START, JOIN_KEY, SESSION_COL,
 )
 from ltv_v4.dims import normalize_dim
 
@@ -49,15 +49,18 @@ def build_population(events: pd.DataFrame, snapshot_now=None, window_start=WINDO
     if entry.empty:
         raise RuntimeError("No entry events (trial_started / subscription_started) in the pull")
 
-    entry = entry.sort_values([JOIN_KEY, "ts"])
-    first = entry.groupby(JOIN_KEY, as_index=False).first()
+    # One row per SESSION, not per person. The email rides along (groupby().first()
+    # keeps it) because product B scope and reporting still ask person-level
+    # questions. In "person" mode the two columns are equal.
+    entry = entry.sort_values([SESSION_COL, "ts"])
+    first = entry.groupby(SESSION_COL, as_index=False).first()
 
     # campaign_name/ad_name entered the pull 2026-08-06 (for the weekly-curve
     # breakdown tables); older event files predate them, so their absence must
     # not break a rebuild-at-T from an old snapshot.
     dim_cols = [c for c in ("campaign_name", "ad_name") if c in first.columns]
 
-    pop = first[[JOIN_KEY, "ts", "funnel_name", "country", "utm_source"] + dim_cols].rename(
+    pop = first[[SESSION_COL, JOIN_KEY, "ts", "funnel_name", "country", "utm_source"] + dim_cols].rename(
         columns={"ts": "first_date", "funnel_name": "first_funnel", "country": "geo"}
     )
 
@@ -113,7 +116,7 @@ def attach_revenue(pop: pd.DataFrame, revenue: pd.DataFrame) -> pd.DataFrame:
                       LTV. Do not use it as an LTV denominator.
     """
     cols = ["trial_net", "base_net", "ups_net", "total_net", "has_ups", "has_paid_trial"]
-    out = pop.merge(revenue[[JOIN_KEY] + cols], on=JOIN_KEY, how="left")
+    out = pop.merge(revenue[[SESSION_COL] + cols], on=SESSION_COL, how="left")
     out[["trial_net", "base_net", "ups_net", "total_net"]] = out[
         ["trial_net", "base_net", "ups_net", "total_net"]
     ].fillna(0.0)

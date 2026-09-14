@@ -37,7 +37,7 @@ import pandas as pd
 
 from ltv_v4.config import (
     UPS_EVENT_TYPE, UPS_FIRST_WEEK, UPS_CADENCE_WEEKS, RETURN_WINDOW_DAYS,
-    BASE_EVENT_TYPE, JOIN_KEY,
+    BASE_EVENT_TYPE, JOIN_KEY, SESSION_COL,
 )
 
 # Prior weight for shrinking a cell's attach rate toward the portfolio rate.
@@ -55,13 +55,13 @@ def checkpoint_observations(events: pd.DataFrame, pop: pd.DataFrame,
     rest of the pipeline: a checkpoint only counts once RETURN_WINDOW_DAYS have
     passed, so a person still inside their window is neither alive nor dead here.
     """
-    first_date = pop.set_index(JOIN_KEY)["first_date"]
-    age = pop.set_index(JOIN_KEY)["age_weeks_now"]
+    first_date = pop.set_index(SESSION_COL)["first_date"]
+    age = pop.set_index(SESSION_COL)["age_weeks_now"]
     settle_weeks = int(np.ceil(RETURN_WINDOW_DAYS / 7.0))
 
     def to_week(df):
-        d = df[df[JOIN_KEY].isin(first_date.index)].copy()
-        d["week"] = ((d["ts"] - d[JOIN_KEY].map(first_date)).dt.days // 7).clip(lower=0)
+        d = df[df[SESSION_COL].isin(first_date.index)].copy()
+        d["week"] = ((d["ts"] - d[SESSION_COL].map(first_date)).dt.days // 7).clip(lower=0)
         return d
 
     base_w = to_week(ladder)
@@ -70,13 +70,17 @@ def checkpoint_observations(events: pd.DataFrame, pop: pd.DataFrame,
     rows = []
     for w in range(UPS_FIRST_WEEK, max_checkpoint + 1, UPS_CADENCE_WEEKS):
         settled = set(age[age >= w + settle_weeks].index)
-        alive = set(base_w.loc[base_w["week"] == w, JOIN_KEY]) & settled
+        alive = set(base_w.loc[base_w["week"] == w, SESSION_COL]) & settled
         if not alive:
             continue
-        paid = set(ups_w.loc[ups_w["week"] == w, JOIN_KEY]) & alive
-        for person in alive:
-            rows.append({JOIN_KEY: person, "week": w, "paid_ups": int(person in paid)})
-    return pd.DataFrame(rows, columns=[JOIN_KEY, "week", "paid_ups"])
+        # Per SESSION: an upsell attaches to the subscription that carries its
+        # own customer_user_id (99.8% resolve). Keyed by email, a person with
+        # two subscriptions where only one took the upsell is counted as an
+        # upsell taker on both.
+        paid = set(ups_w.loc[ups_w["week"] == w, SESSION_COL]) & alive
+        for sess in alive:
+            rows.append({SESSION_COL: sess, "week": w, "paid_ups": int(sess in paid)})
+    return pd.DataFrame(rows, columns=[SESSION_COL, "week", "paid_ups"])
 
 
 def portfolio_rate(obs: pd.DataFrame) -> float:
@@ -94,7 +98,7 @@ def cell_rate(obs: pd.DataFrame, emails, prior: float, k: int = ATTACH_SHRINK) -
     """
     if obs.empty:
         return prior
-    sub = obs[obs[JOIN_KEY].isin(set(emails))]
+    sub = obs[obs[SESSION_COL].isin(set(emails))]
     n = len(sub)
     if n == 0:
         return prior

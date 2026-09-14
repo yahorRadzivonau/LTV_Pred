@@ -44,7 +44,7 @@ from ltv_v4.config import (
     BASE_EVENT_TYPE, UPS_EVENT_TYPE, TRIAL_EVENT_TYPE, CAPTURED_EVENT_TYPES,
     TRIAL_PLACEHOLDER_AMOUNT, REFUND_HAIRCUT, DATA_DIR, EVENTS_GLOB, JOIN_KEY,
     EXCLUDE_PRODUCT_B, PRODUCT_B_TRIAL_AMOUNT, PRODUCT_B_BASE_MIN_AMOUNT,
-    NET_MISSING_MAX_SHARE,
+    NET_MISSING_MAX_SHARE, SESSION_KEY, SESSION_COL,
 )
 
 TRIAL_REAL = "real"
@@ -132,6 +132,7 @@ def load_events(path=None, exclude_product_b: bool = EXCLUDE_PRODUCT_B) -> pd.Da
     # negative, which would make a refund indistinguishable from a fee.
     ev["amt_net"] = pd.to_numeric(ev["amt_net"], errors="coerce").clip(lower=0.0)
     _assert_net_coverage(ev)
+    ev[SESSION_COL] = _session_id(ev)
     ev["trial_kind"] = classify_trial(ev)
 
     if exclude_product_b:
@@ -140,6 +141,35 @@ def load_events(path=None, exclude_product_b: bool = EXCLUDE_PRODUCT_B) -> pd.Da
         ev.attrs["product_b_excluded"] = len(members)
 
     return ev.sort_values([JOIN_KEY, "ts"]).reset_index(drop=True)
+
+
+def _session_id(ev: pd.DataFrame) -> pd.Series:
+    """The grain every downstream groupby uses. See config.SESSION_KEY.
+
+    In "person" mode this is a copy of the email, so the whole pipeline behaves
+    exactly as v3 -- that is the point: the switch is only trustworthy if the
+    changed code path is the one being exercised when it is off.
+    """
+    if SESSION_KEY == "person":
+        return ev[JOIN_KEY]
+    if SESSION_KEY != "subscription":
+        raise ValueError(f"SESSION_KEY must be 'person' or 'subscription', got {SESSION_KEY!r}")
+    if "subscription_key" not in ev.columns:
+        raise ValueError(
+            "SESSION_KEY='subscription' needs the subscription_key column, and this "
+            "events file predates it. Re-run web/v4/pull_v4_events.py. Do NOT fall "
+            "back to the email grain -- that silently restores every bug this mode "
+            "exists to fix, under the new column names."
+        )
+    missing = int(ev["subscription_key"].isna().sum())
+    if missing:
+        raise ValueError(
+            f"{missing} rows have no subscription_key. They cannot be assigned to a "
+            "subscription, and defaulting them to one bucket would merge unrelated "
+            "payments into a single chain. Measured at the time of writing: 0 such "
+            "rows across all five pulled event types."
+        )
+    return ev[JOIN_KEY].astype("string") + "|" + ev["subscription_key"].astype("string")
 
 
 def _assert_net_coverage(ev: pd.DataFrame) -> None:
@@ -218,8 +248,12 @@ def per_person_revenue(events: pd.DataFrame, window_end=None) -> pd.DataFrame:
     }
     frame = pd.DataFrame({name: amt.where(mask, 0.0) for name, mask in by_type.items()})
     frame[JOIN_KEY] = money[JOIN_KEY].values
+    frame[SESSION_COL] = money[SESSION_COL].values
 
-    out = frame.groupby(JOIN_KEY, as_index=False).sum()
+    # Grouped by BOTH: the session is the grain, the email rides along because
+    # product B scope, reporting and any person-level question still need it.
+    # In "person" mode the two columns are equal and this is a no-op.
+    out = frame.groupby([JOIN_KEY, SESSION_COL], as_index=False).sum()
     for stream in ("trial", "base", "ups"):
         out[f"{stream}_net"] = out[f"{stream}_recv"] * (1.0 - REFUND_HAIRCUT)
 
@@ -252,18 +286,21 @@ def per_person_week_cumulative(events: pd.DataFrame, pop: pd.DataFrame, max_week
     money = money_events(events)
     if streams is not None:
         money = money[money["event_type"].isin(streams)]
-    first = pop.set_index(JOIN_KEY)["first_date"]
-    money = money[money[JOIN_KEY].isin(first.index)].copy()
+    first = pop.set_index(SESSION_COL)["first_date"]
+    money = money[money[SESSION_COL].isin(first.index)].copy()
+    # Week 0 is the SESSION's own first week, not the person's. For a second
+    # subscription started months later, measuring from the person's first date
+    # would put its first payment at week 30 and drop it past max_week.
     money["week"] = (
-        (money["ts"] - money[JOIN_KEY].map(first)).dt.days // 7
+        (money["ts"] - money[SESSION_COL].map(first)).dt.days // 7
     ).clip(lower=0)
     money = money[money["week"] <= max_week]
 
     net = money["amt_net"].fillna(0.0) * (1.0 - REFUND_HAIRCUT)
     grid = (
-        pd.DataFrame({JOIN_KEY: money[JOIN_KEY].values, "week": money["week"].values, "net": net.values})
-        .pivot_table(index=JOIN_KEY, columns="week", values="net", aggfunc="sum", fill_value=0.0)
-        .reindex(index=pop[JOIN_KEY], columns=range(max_week + 1), fill_value=0.0)
+        pd.DataFrame({SESSION_COL: money[SESSION_COL].values, "week": money["week"].values, "net": net.values})
+        .pivot_table(index=SESSION_COL, columns="week", values="net", aggfunc="sum", fill_value=0.0)
+        .reindex(index=pop[SESSION_COL], columns=range(max_week + 1), fill_value=0.0)
         .fillna(0.0)
     )
     return grid.cumsum(axis=1)
@@ -290,11 +327,16 @@ def base_payment_ladder(events: pd.DataFrame, dedup_days: float = 3.0) -> pd.Dat
     mislabelled_trial = amt.eq(round(0.99, 2))
     base = base[~mislabelled_trial].copy()
 
-    base = base.sort_values([JOIN_KEY, "ts"])
-    gap_days = base.groupby(JOIN_KEY)["ts"].diff().dt.total_seconds() / 86400
+    # Every one of these four is per SESSION, not per person. Keyed by email,
+    # two parallel subscriptions interleave: the dedup below then compares a
+    # payment against the OTHER subscription's payment 10-30 hours earlier and
+    # deletes it (4,672 rows, $46,190), step_k counts across both chains, and
+    # days_to_next measures the gap to the wrong subscription.
+    base = base.sort_values([SESSION_COL, "ts"])
+    gap_days = base.groupby(SESSION_COL)["ts"].diff().dt.total_seconds() / 86400
     base = base[gap_days.isna() | (gap_days > dedup_days)].copy()
 
-    base["step_k"] = base.groupby(JOIN_KEY).cumcount() + 1
-    base["next_pay_ts"] = base.groupby(JOIN_KEY)["ts"].shift(-1)
+    base["step_k"] = base.groupby(SESSION_COL).cumcount() + 1
+    base["next_pay_ts"] = base.groupby(SESSION_COL)["ts"].shift(-1)
     base["days_to_next"] = (base["next_pay_ts"] - base["ts"]).dt.total_seconds() / 86400
     return base

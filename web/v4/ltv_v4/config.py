@@ -409,6 +409,46 @@ LOW_N_CELL_THRESHOLD = 40  # n_payers below this -> cell flagged low_n
 # 2,572 people across 39 cells of table C.
 MIN_COHORT_AGE_WEEKS = 1
 
+# ============================================================ session grain (v4 NEW)
+# THE v4 CHANGE, and the only switch that decides what a "row" means everywhere
+# downstream.
+#
+#   "person"        session_id = email                     -- identical to v3
+#   "subscription"  session_id = email|customer_user_id    -- v4
+#
+# WHY customer_user_id. This config rejects it as an IDENTITY key, correctly:
+# Solidgate reissues it on resubscribe, so one person appears under several.
+# That is exactly what makes it the right key for WHICH SUBSCRIPTION a payment
+# belongs to. email = person, customer_user_id = subscription -- not a broken
+# key, a key at a different grain.
+#
+# WHAT IT FIXES. 996 people (8.3% of base payers) run two subscriptions at
+# overlapping times, median overlap 13 days. Keyed by email their payments
+# interleave into one chain: gaps between consecutive base payments are 39.8%
+# under 3 days, median 4.0d. Keyed by (email, customer_user_id) the same data
+# is a textbook weekly subscription -- 1.7% under 3 days, p25=median=p75=7.0d.
+# Full measurement: reports/web_v4/session_rule_findings.md.
+#
+# Consequences of the email grain that this removes, all measured:
+#   - base_payment_ladder's 3-day dedup deletes 4,672 real payments ($46,190,
+#     9.0% of base revenue, 1,590 people) from the survival ladder while
+#     per_person_revenue still counts them -- anchor and curve describe
+#     different realities
+#   - step_k counts across two chains at once
+#   - days_to_next measures the gap to the OTHER subscription's payment, so a
+#     dying subscription reads as alive
+#   - a billing_issue on one subscription mislabels the other's step
+#
+# NO MERGING of keys. 296 people have a key split without a second trial; 32%
+# of those pairs OVERLAP in time and the sequential ones sit at a median 37-day
+# gap, with no cluster near zero to put a threshold on. Every key is its own
+# session.
+#
+# The switch exists so "person" reproduces v3 bit-for-bit. Change it only after
+# that no-op is demonstrated on numbers, never as a convenience.
+SESSION_KEY = "person"
+SESSION_COL = "session_id"
+
 # ============================================================ paths
 DATA_DIR = "data/web_v4"
 OUT_DIR = "reports/web_v4"

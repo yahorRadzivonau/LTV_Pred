@@ -47,7 +47,7 @@ import pandas as pd
 
 from ltv_v4.config import (
     DUNNING_EVENT_TYPES, VOLUNTARY_EVENT_TYPES, TRIAL_EVENT_TYPE,
-    RETURN_WINDOW_DAYS, JOIN_KEY,
+    RETURN_WINDOW_DAYS, JOIN_KEY, SESSION_COL,
 )
 from ltv_v4 import revenue as R
 
@@ -87,19 +87,22 @@ def _state_flags(events: pd.DataFrame, ladder: pd.DataFrame) -> pd.DataFrame:
     """had_issue / had_vol per (person, step): did a dunning or cancel event fall
     between this payment and the next one?"""
     state = events[events["event_type"].isin(DUNNING_EVENT_TYPES + VOLUNTARY_EVENT_TYPES)]
-    state = state[[JOIN_KEY, "ts", "event_type"]]
+    state = state[[SESSION_COL, "ts", "event_type"]]
     if state.empty:
-        return pd.DataFrame(columns=[JOIN_KEY, "step_k", "had_issue", "had_vol"])
+        return pd.DataFrame(columns=[SESSION_COL, "step_k", "had_issue", "had_vol"])
 
+    # Matched per SESSION. Keyed by email, a billing_issue raised on one
+    # subscription lands inside the other's payment window and flags the wrong
+    # step as had_issue -- which then changes its outcome label.
     merged = state.merge(
-        ladder[[JOIN_KEY, "step_k", "ts", "next_pay_ts"]],
-        on=JOIN_KEY, suffixes=("_ev", "_step"),
+        ladder[[SESSION_COL, "step_k", "ts", "next_pay_ts"]],
+        on=SESSION_COL, suffixes=("_ev", "_step"),
     )
     in_window = (merged["ts_ev"] > merged["ts_step"]) & (
         merged["next_pay_ts"].isna() | (merged["ts_ev"] <= merged["next_pay_ts"])
     )
     merged = merged[in_window]
-    return merged.groupby([JOIN_KEY, "step_k"], as_index=False).agg(
+    return merged.groupby([SESSION_COL, "step_k"], as_index=False).agg(
         had_issue=("event_type", lambda s: s.isin(DUNNING_EVENT_TYPES).any()),
         had_vol=("event_type", lambda s: s.isin(VOLUNTARY_EVENT_TYPES).any()),
     )
@@ -113,9 +116,9 @@ def _plan_interval(ladder: pd.DataFrame) -> pd.Series:
     leaking into a feature. core/map_model.py excludes it for exactly this
     reason (see its module docstring).
     """
-    gaps = ladder.groupby(JOIN_KEY)["ts"].diff().dt.total_seconds() / 86400
+    gaps = ladder.groupby(SESSION_COL)["ts"].diff().dt.total_seconds() / 86400
     sane = gaps[gaps <= 60]
-    med = sane.groupby(ladder.loc[sane.index, JOIN_KEY]).median()
+    med = sane.groupby(ladder.loc[sane.index, SESSION_COL]).median()
 
     def bucket(g):
         if pd.isna(g):
@@ -134,8 +137,8 @@ def _plan_interval(ladder: pd.DataFrame) -> pd.Series:
 def _trial_days(events: pd.DataFrame, ladder: pd.DataFrame) -> pd.Series:
     """Days from trial start to first base payment. Owner states the trial is 1
     week; this measures what actually happened."""
-    trial_first = events[events["event_type"].eq(TRIAL_EVENT_TYPE)].groupby(JOIN_KEY)["ts"].min()
-    base_first = ladder.groupby(JOIN_KEY)["ts"].min()
+    trial_first = events[events["event_type"].eq(TRIAL_EVENT_TYPE)].groupby(SESSION_COL)["ts"].min()
+    base_first = ladder.groupby(SESSION_COL)["ts"].min()
     return (base_first - trial_first).dt.days
 
 
@@ -149,42 +152,44 @@ def build_matrix(events: pd.DataFrame, pop: pd.DataFrame, snapshot_ts=None) -> p
     """
     snapshot_ts = pd.Timestamp(snapshot_ts, tz="UTC") if snapshot_ts is not None else events["ts"].max()
 
-    members = set(pop[JOIN_KEY])
-    events = events[events[JOIN_KEY].isin(members) & (events["ts"] <= snapshot_ts)].copy()
+    members = set(pop[SESSION_COL])
+    events = events[events[SESSION_COL].isin(members) & (events["ts"] <= snapshot_ts)].copy()
 
     ladder = R.base_payment_ladder(events)
     if ladder.empty:
         raise RuntimeError("No base payments left after restricting to the population")
 
     flags = _state_flags(events, ladder)
-    steps = ladder.merge(flags, on=[JOIN_KEY, "step_k"], how="left")
+    steps = ladder.merge(flags, on=[SESSION_COL, "step_k"], how="left")
     steps[["had_issue", "had_vol"]] = steps[["had_issue", "had_vol"]].fillna(False).astype(bool)
     steps["outcome"] = steps.apply(_outcome, axis=1)
 
     # --- per-person attributes -------------------------------------------------
-    attrs = pop.set_index(JOIN_KEY)
-    first_pay = ladder.groupby(JOIN_KEY)["ts"].min()
+    attrs = pop.set_index(SESSION_COL)
+    first_pay = ladder.groupby(SESSION_COL)["ts"].min()
 
     mx = steps.rename(columns={"ts": "pay_ts"})
-    mx["sub_id"] = mx[JOIN_KEY]
+    # sub_id is the SESSION. map_web groups people by it to build lever combos,
+    # and cohort_hr indexes its per-person multipliers on it.
+    mx["sub_id"] = mx[SESSION_COL]
 
     # app_id = cohort. THE change that makes hr per-cohort instead of global.
-    mx["cohort_date"] = mx[JOIN_KEY].map(attrs["cohort_date"])
+    mx["cohort_date"] = mx[SESSION_COL].map(attrs["cohort_date"])
     mx["app_id"] = mx["cohort_date"].dt.date.astype(str)
 
-    mx["geo"] = mx[JOIN_KEY].map(attrs["geo"])
-    mx["media_source"] = mx[JOIN_KEY].map(attrs["utm_source"])
-    mx["funnel"] = mx[JOIN_KEY].map(attrs["first_funnel"])
+    mx["geo"] = mx[SESSION_COL].map(attrs["geo"])
+    mx["media_source"] = mx[SESSION_COL].map(attrs["utm_source"])
+    mx["funnel"] = mx[SESSION_COL].map(attrs["first_funnel"])
     mx["attribution_source"] = "(none)"          # appsflyer web carries no equivalent field
     mx["state_from"] = "active"                  # placeholder, as in iOS; grey state is next iteration
     mx["cohort_month"] = mx["cohort_date"].dt.to_period("M").astype(str)
     mx["billing_day_of_month"] = mx["pay_ts"].dt.day
-    mx["plan_interval"] = mx[JOIN_KEY].map(_plan_interval(ladder)).fillna("unknown")
-    mx["trial_days"] = mx[JOIN_KEY].map(_trial_days(events, ladder))
+    mx["plan_interval"] = mx[SESSION_COL].map(_plan_interval(ladder)).fillna("unknown")
+    mx["trial_days"] = mx[SESSION_COL].map(_trial_days(events, ladder))
 
     # weeks_obs: how long this person has been observable, in weeks since their
     # first base payment. Same definition as iOS.
-    mx["weeks_obs"] = mx[JOIN_KEY].map(
+    mx["weeks_obs"] = mx[SESSION_COL].map(
         (snapshot_ts - first_pay).dt.total_seconds() / (7 * 86400)
     )
 
