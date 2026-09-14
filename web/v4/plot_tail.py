@@ -28,7 +28,7 @@ os.chdir(ROOT)
 from core import common  # noqa: E402
 from ltv_v4.config import (  # noqa: E402
     OUT_DIR, DATA_DIR, MATRIX_GLOB, POPULATION_GLOB, H_EXT, BASE_PRICE,
-    RETURN_WINDOW_DAYS,
+    RETURN_WINDOW_DAYS, SESSION_COL,
 )
 from ltv_v4 import se_training_web as S, map_web as M, money as MON, revenue as R  # noqa: E402
 
@@ -61,7 +61,7 @@ def main():
     surv = np.cumprod(1 - np.clip(haz, 0.001, 0.999))
     curve = pd.Series(surv, index=ks)
 
-    base_people = pop.set_index("email")
+    base_people = pop.set_index(SESSION_COL)
     base_people = base_people[base_people["has_base"]]
 
     fact_w, fact_v = [], []

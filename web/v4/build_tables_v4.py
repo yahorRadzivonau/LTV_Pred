@@ -48,6 +48,7 @@ from core import common  # noqa: E402
 from ltv_v4.config import (  # noqa: E402
     OUT_DIR, DATA_DIR, MATRIX_GLOB, POPULATION_GLOB, LOW_N_CELL_THRESHOLD,
     RETURN_WINDOW_DAYS, MAP_LEVERS_WEB, MIN_COHORT_AGE_WEEKS, BASE_EVENT_TYPE,
+    SESSION_COL,
 )
 from ltv_v4 import se_training_web as S, map_web as M, money as MON, revenue as R  # noqa: E402
 from ltv_v4 import upsell as U  # noqa: E402
@@ -118,7 +119,10 @@ UPS_PORTFOLIO = U.portfolio_rate(ups_obs)
 print(f"upsell attach rate: portfolio {UPS_PORTFOLIO:.1%} over {len(ups_obs)} checkpoint observations "
       f"(lifetime-share fallback would have been {pop.loc[pop['has_base'], 'has_ups'].mean():.1%})")
 
-pop_idx = pop.set_index("email")
+# По СЕССИИ, не по email: в популяции теперь строка на подписку, и email
+# в ней не уникален. Ключ должен совпадать с mx["sub_id"], иначе пересечение
+# пустое и ячейка молча получает source="no_payers" вместо цифр.
+pop_idx = pop.set_index(SESSION_COL)
 matrix_people = set(mx["sub_id"])
 
 

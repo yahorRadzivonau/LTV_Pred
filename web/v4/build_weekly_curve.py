@@ -35,7 +35,7 @@ from core import common  # noqa: E402
 from ltv_v4.config import (  # noqa: E402
     OUT_DIR, DATA_DIR, MATRIX_GLOB, POPULATION_GLOB, H_EXT, BASE_EVENT_TYPE,
     UPS_EVENT_TYPE, RETURN_WINDOW_DAYS, MIN_COHORT_AGE_WEEKS, MAP_LEVERS_WEB,
-    UPS_FIRST_WEEK, UPS_CADENCE_WEEKS, UPS_PRICE, BASE_PRICE,
+    UPS_FIRST_WEEK, UPS_CADENCE_WEEKS, UPS_PRICE, BASE_PRICE, SESSION_COL,
 )
 from ltv_v4 import se_training_web as S, map_web as M, revenue as R, money as MON  # noqa: E402
 from ltv_v4 import upsell as U  # noqa: E402
@@ -77,7 +77,7 @@ for cohort, rows in train.groupby("app_id"):
 ladder = R.base_payment_ladder(events)
 ups = R.money_events(events)
 ups = ups[ups["event_type"].eq(UPS_EVENT_TYPE)]
-first_date = pop.set_index("email")["first_date"]
+first_date = pop.set_index(SESSION_COL)["first_date"]
 
 def weekly_counts(df):
     """(email, week) -> 1 if the person paid that week, for people in the population.
@@ -88,10 +88,10 @@ def weekly_counts(df):
     side is a survival probability, i.e. people. Mixing the two puts a ~1% step
     at the fact/model boundary of every chart.
     """
-    d = df[df["email"].isin(first_date.index)].copy()
-    d["week"] = ((d["ts"] - d["email"].map(first_date)).dt.days // 7).clip(lower=0)
+    d = df[df[SESSION_COL].isin(first_date.index)].copy()
+    d["week"] = ((d["ts"] - d[SESSION_COL].map(first_date)).dt.days // 7).clip(lower=0)
     d = d[d["week"] <= H_EXT]
-    return d.groupby(["email", "week"]).size().clip(upper=1)
+    return d.groupby([SESSION_COL, "week"]).size().clip(upper=1)
 
 base_counts = weekly_counts(ladder)
 ups_counts = weekly_counts(ups)
@@ -108,7 +108,10 @@ print(f"upsell attach rate: portfolio {UPS_PORTFOLIO:.1%} over {len(ups_obs)} ch
 # anchors on: actual charged amounts, trial included, REFUND_HAIRCUT applied.
 cum = R.per_person_week_cumulative(events, pop, max_week)
 
-pop_idx = pop.set_index("email")
+# По СЕССИИ, не по email: в популяции теперь строка на подписку, и email
+# в ней не уникален. Ключ должен совпадать с mx["sub_id"], иначе пересечение
+# пустое и ячейка молча получает source="no_payers" вместо цифр.
+pop_idx = pop.set_index(SESSION_COL)
 matrix_people = set(mx["sub_id"])
 
 # ================================================================ build

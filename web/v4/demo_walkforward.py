@@ -28,7 +28,7 @@ sys.path.insert(0, str(HERE))
 os.chdir(ROOT)
 
 from core import common  # noqa: E402
-from ltv_v4.config import OUT_DIR, DATA_DIR, MATRIX_GLOB, POPULATION_GLOB  # noqa: E402
+from ltv_v4.config import OUT_DIR, DATA_DIR, MATRIX_GLOB, POPULATION_GLOB, SESSION_COL  # noqa: E402
 from ltv_v4 import se_training_web as S, map_web as M, money as MON, revenue as R  # noqa: E402
 
 HORIZONS = [4, 8, 12, 26, 52]
@@ -51,7 +51,7 @@ def main():
     max_week = int(pop["age_weeks_now"].max())
     cum = R.per_person_week_cumulative(events, pop, max_week)
     ios_h = common.empirical_hbase(common.load_matrix())
-    pop_idx = pop.set_index("email")
+    pop_idx = pop.set_index(SESSION_COL)
 
     lines = [
         "# Прогон week-by-week: как прогноз меняется по мере поступления данных",

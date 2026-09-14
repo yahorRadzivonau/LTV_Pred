@@ -29,6 +29,7 @@ os.chdir(ROOT)
 
 from ltv_v4.config import (  # noqa: E402
     OUT_DIR, DATA_DIR, POPULATION_GLOB, RETURN_WINDOW_DAYS, MIN_COHORT_AGE_WEEKS,
+    SESSION_COL,
 )
 from ltv_v4 import revenue as R  # noqa: E402
 
@@ -45,7 +46,7 @@ def main():
     events = R.load_events()
     max_week = int(pop["age_weeks_now"].max())
     cum = R.per_person_week_cumulative(events, pop, max_week)
-    pop_idx = pop.set_index("email")
+    pop_idx = pop.set_index(SESSION_COL)
     base_idx = pop_idx[pop_idx["has_base"]]
 
     tbl_c = pd.read_csv(sorted(Path(OUT_DIR).glob("table_C_v3_*.csv"))[-1])
