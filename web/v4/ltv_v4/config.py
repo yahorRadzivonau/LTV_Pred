@@ -254,21 +254,34 @@ WINDOW_START = pd.Timestamp("2026-04-13", tz="UTC")
 # before that is empty for this product.
 PULL_FLOOR_DATE = pd.Timestamp("2025-10-01", tz="UTC")
 
-# v3 TEMPORARY CEILING, added 2026-09-11. trial_started stopped arriving in
-# silver_layer.web_conversions on 2026-09-02: 94 rows in all of September
-# against 8,291 in August, while subscription_started and billing_issue keep
-# flowing normally. Verified upstream -- web-payment-orchestration.
-# prod_web_events.stripe_events_parsed still receives trial_started at the usual
-# 275-537/day -- so the break is in the scheduled query that builds
-# web_conversions (that query lives in data_repo, not in this repo).
+# CEILING REMOVED 2026-09-15. Previous comment (2026-09-11) was WRONG in both
+# its diagnosis and its source table.
 #
-# Pulling past the break would build September cohorts on a near-empty
-# population and silently wreck n_trial / conversion / ltv_per_trial_*. This
-# ceiling moves snapshot_ts back to 2026-09-01 instead, so the model is simply
-# "as of 1 September": coherent, just 10 days less fresh.
+# WHAT THE OLD COMMENT GOT WRONG:
+#   It looked at stripe_events_parsed and saw trial_started still arriving at
+#   275-537/day there -- concluding the break was in the scheduled query that
+#   builds web_conversions. But stripe_events_parsed is NOT the primary source:
+#   it covers only ~3-10% of volume, and email is populated in only 44 of 768
+#   rows even on a normal day (e.g. 2026-08-20). Counting rows there is
+#   meaningless as a signal for the overall pipeline.
 #
-# SET BACK TO None the moment trial_started is fixed upstream.
-PULL_CEILING_DATE = pd.Timestamp("2026-09-01", tz="UTC")
+# WHAT IS ACTUALLY HAPPENING:
+#   The primary source is web-payment-orchestration.prod_web_events.
+#   solidgate_events_parsed (~85% of volume, email 100% populated). That table
+#   shows a clean, real drop in trial_started:
+#       2026-08-30  249 trials, email non-null: 249
+#       2026-08-31  194 trials, email non-null: 194
+#       2026-09-01   87 trials, email non-null:  87
+#       2026-09-02    2 trials, email non-null:   2
+#       2026-09-03+   0 trials
+#   Email fill-rate is 100% throughout -- there is no pipeline break. The app
+#   was temporarily removed from the store, so trials genuinely stopped.
+#
+# WHY THE CEILING IS NOW REMOVED:
+#   Near-empty September cohorts are correct, not artifacts. Meanwhile
+#   subscription_started (renewals) continues at 640-1040/day and we were
+#   losing those rows for no reason. Ceiling set back to None.
+PULL_CEILING_DATE = None
 
 # ============================================================ survival / censoring
 HMAX = 52          # forecast horizon in payment steps, same as core.common.HMAX
